@@ -1,0 +1,192 @@
+:root {
+  /* Spider-Man Brand New Day Theme Colors */
+  --spidey-red: #E22228;
+  --spidey-red-hover: #B91C1C;
+  --spidey-blue: #1E40AF;
+  --spidey-blue-hover: #1E3A8A;
+  
+  --bg-color: #080C14; /* Deep spider black */
+  --card-bg: rgba(15, 23, 42, 0.9); /* Dark slate blue */
+  --sidebar-bg: #0D1321; /* Slightly darker slate blue */
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  
+  /* Spider-Man thematic borders (subtle red tint) */
+  --border-color: rgba(226, 34, 40, 0.18);
+  --border-color-active: rgba(226, 34, 40, 0.4);
+  
+  --success-green: #10B981;
+  --success-bg: rgba(16, 185, 129, 0.1);
+  --error-red: #EF4444;
+  --error-bg: rgba(239, 68, 68, 0.1);
+
+  /* Message backgrounds */
+  --user-msg-bg: linear-gradient(135deg, var(--spidey-red) 0%, #991B1B 100%);
+  --other-msg-bg: #1E293B;
+
+  /* Typography */
+  --font-family: 'Inter', sans-serif;
+  --font-header: 'Montserrat', 'Inter', sans-serif;
+  
+  /* Shadows & Radius */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px -1px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 12px 24px -3px rgba(226, 34, 40, 0.15), 0 4px 12px -2px rgba(0, 0, 0, 0.5);
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-full: 9999px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  
+  /* Half-tone / Comic-book dot pattern */
+  background-image: radial-gradient(rgba(226, 34, 40, 0.08) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+/* Typography Utilities */
+h1, h2, h3, h4 {
+  font-family: var(--font-header);
+  font-weight: 800;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+/* Forms & Buttons */
+.input-field {
+  width: 100%;
+  padding: 10px 14px;
+  background-color: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  font-size: 14px;
+  font-family: var(--font-family);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.input-field:focus {
+  border-color: var(--spidey-red);
+  box-shadow: 0 0 0 3px rgba(226, 34, 40, 0.2);
+  background-color: rgba(15, 23, 42, 0.95);
+}
+
+.input-field::placeholder {
+  color: #475569;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--spidey-red) 0%, #B91C1C 100%);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-family: var(--font-header);
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(226, 34, 40, 0.35);
+  letter-spacing: 0.05em;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 20px rgba(226, 34, 40, 0.5);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  background-color: rgba(255, 255, 255, 0.02);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-header);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  gap: 8px;
+}
+
+.btn-outline:hover {
+  background-color: rgba(226, 34, 40, 0.06);
+  border-color: rgba(226, 34, 40, 0.4);
+}
+
+/* Toast Container */
+#toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toast {
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-header);
+  text-transform: uppercase;
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(8px);
+  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+  transform: translateX(100%);
+  border: 1px solid transparent;
+}
+
+.toast.error {
+  background-color: rgba(220, 38, 38, 0.15);
+  color: #FECACA;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.toast.success {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #A7F3D0;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+@keyframes slideIn {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

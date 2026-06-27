@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenChat - Join Room</title>
+    <!-- Google Fonts: Inter & Montserrat -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/join-room.css">
+</head>
+<body>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+
+    <div class="join-container">
+        <header class="header">
+            <div class="logo">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 8px;">
+                    <ellipse cx="12" cy="13" rx="2.5" ry="4.5" fill="var(--spidey-red)" stroke="var(--spidey-red)"/>
+                    <circle cx="12" cy="7" r="1.8" fill="var(--spidey-red)" stroke="var(--spidey-red)"/>
+                    <path d="M9.5 10C7.5 9 6 7 6 5M14.5 10C16.5 9 18 7 18 5M9 13C6.5 13 5.5 12.5 4.5 11M15 13C17.5 13 18.5 12.5 19.5 11M9.5 16C7.5 17 6 19 6 21M14.5 16C16.5 17 18 19 18 21" stroke="var(--spidey-red)" stroke-linecap="round"/>
+                </svg>
+                <span>OpenChat</span>
+            </div>
+            <div class="mode-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                Guest Mode
+            </div>
+        </header>
+
+        <div class="join-card">
+            <div class="card-header">
+                <div class="icon-wrapper">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/>
+                    </svg>
+                </div>
+                <h1>Join a Chat Room</h1>
+                <p class="text-muted">Enter your details and join the conversation</p>
+            </div>
+
+            <form id="join-form">
+                <div class="form-group">
+                    <label>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        Display Name
+                    </label>
+                    <input type="text" id="display-name" class="input-field" placeholder="Enter your display name" required minlength="3" maxlength="20">
+                    <small class="text-muted">3–20 characters</small>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        Available Rooms
+                    </label>
+                    <div class="room-list" id="available-rooms">
+                        <label class="room-option active">
+                            <input type="radio" name="room" value="General" checked>
+                            <span class="room-name">General</span>
+                            <span class="online-badge">12 online</span>
+                        </label>
+                        <label class="room-option">
+                            <input type="radio" name="room" value="JavaScript">
+                            <span class="room-name">JavaScript</span>
+                            <span class="online-badge">8 online</span>
+                        </label>
+                        <label class="room-option">
+                            <input type="radio" name="room" value="Movies">
+                            <span class="room-name">Movies</span>
+                            <span class="online-badge">5 online</span>
+                        </label>
+                        <label class="room-option">
+                            <input type="radio" name="room" value="Sports">
+                            <span class="room-name">Sports</span>
+                            <span class="online-badge">7 online</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="divider">
+                    <span>OR</span>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                        Create New Room
+                    </label>
+                    <input type="text" id="new-room" class="input-field" placeholder="Enter new room name (e.g. music, travel)">
+                    <small class="text-muted">No spaces at start or end. 3–30 characters.</small>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    Join Room
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+            </form>
+        </div>
+
+        <footer class="footer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            OpenChat is a public chat platform. Be respectful and follow community guidelines.
+        </footer>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/join-room.js"></script>
+</body>
+</html>
