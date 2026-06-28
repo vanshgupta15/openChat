@@ -1,119 +1,97 @@
-# OpenChat — Product Requirements Document (PRD)
+# OpenChat — Milestone 1: Foundation & UI
 
-> Real-time public chat rooms with message persistence, Firebase authentication, and cloud deployment.
+> Real-time public chat rooms frontend prototype with responsive design, room-switching capabilities, and sessionStorage mock state management.
 
 ## 1. Project Overview
 
 | Field | Description |
 | --- | --- |
 | Project Name | OpenChat – Real-Time Public Chat Rooms |
-| Project Type | Mini Project / Proof of Concept (POC) |
-| Objective | Build a real-time public group chat application using Node.js, Express.js, Socket.IO, MongoDB, and Vanilla JavaScript. |
-| Expected Outcome | A fully working chat app, GitHub repository, live deployment, and practical backend development experience. |
+| Milestone Stage | Milestone 1 — Foundation & UI Design |
+| Objective | Build the static responsive frontend UI, establish project folder architecture, and implement client-side local session storage routing. |
+| Expected Outcome | A fully functional and responsive visual prototype, enabling guest joins, local chat simulation, and sidebar navigation. |
 
-### Expected Student Outcomes
+### Expected Milestone 1 Outcomes
 
-- Fully working real-time chat application
-- Public GitHub repository
-- Live deployed application
-- Hands-on experience with backend concepts
+- Visual design implementation of all client-side pages.
+- Client-side data storage and authentication flow simulator using browser `sessionStorage`.
+- Fully responsive sidebar layout supporting desktop, tablet, and mobile views.
+- Well-organized folder structure separating the frontend files from future backend assets.
 
 ---
 
-## 2. Scope
+## 2. Scope (Milestone 1)
 
 ### In Scope
 
-- Public chat rooms
-- Real-time messaging
-- Message persistence
-- Online user presence
-- Join / leave notifications
-- Firebase authentication
-- Cloud deployment
+- Guest Mode login card with form inputs.
+- Responsive, collapsible chat room sidebar.
+- Dynamic color-assigned initials avatar generation.
+- Dynamic UI room-switching (updating active room header and highlighters).
+- Message posting interface with interactive emoji/attachment actions.
+- Client-side validation and toast notification popup indicators.
+- Local mock messages and join/leave action simulation.
 
-### Out of Scope
+### Out of Scope (For Future Milestones)
 
-- Private messaging
-- Voice/video calling
-- File sharing
-- Message encryption
-- Admin panel
+- MongoDB Atlas data persistence.
+- Live WebSockets (Socket.IO) message broadcasting.
+- Production-grade User Authentication (Firebase Auth).
+- Live cloud deployment.
 
 ---
 
-## 3. Learning Objectives
+## 3. Learning Objectives (Milestone 1)
 
 Students will gain practical experience with:
 
-- HTML5, CSS3, Bootstrap / Tailwind CSS, Vanilla JavaScript
-- Express.js, REST APIs, Socket.IO
-- MongoDB, Mongoose
-- Firebase Authentication and Firebase Hosting
-- Render deployment
-- Git, GitHub, and environment variables
-- Real-time communication and cloud deployment
+- Writing structured HTML5 semantic markup.
+- Implementing custom CSS3 styling layouts including gradients, active state filters, and typography.
+- Designing responsive screens using CSS flexbox, grids, and media query breakpoints.
+- Managing client state and page-to-page session routing utilizing `sessionStorage` in Vanilla JS.
 
 ---
 
-## 4. Technology Stack
+## 4. Technology Stack (Milestone 1)
 
-| Layer | Technologies |
-| --- | --- |
-| Frontend | HTML5, CSS3, Bootstrap or Tailwind CSS, Vanilla JavaScript |
-| Backend | Node.js, Express.js, Socket.IO |
-| Database | MongoDB Atlas, Mongoose |
-| Authentication | Firebase Authentication (Email & Password Sign Up, Login, Logout) |
-| Hosting | Firebase Hosting (frontend), Render (backend) |
-| Version Control | Git, GitHub |
+| Layer | Technologies | Purpose |
+| --- | --- | --- |
+| Frontend | HTML5, CSS3, Vanilla JavaScript | Client layout, structural styling, dynamic updates |
+| Fonts & Assets | Montserrat, Inter Google Fonts, custom vector SVGs | Premium dark theme typography and UI icon visuals |
+| Storage & State | HTML5 Local `sessionStorage` API | User configuration and active room persistence |
+| Version Control | Git, GitHub | Version tracking under the `milestone-1` branch |
 
 ---
 
-## 5. Core Functionalities
+## 5. Core Functionalities (Milestone 1)
 
-### Guest Mode
+### Guest Mode (Completed)
+- Input field validation for user display name (3-20 characters).
+- Preset room selections (General, JavaScript, Movies, Sports).
+- Option to specify and dynamically add custom room names.
+- Auto-saving details into the `openchat_user` session variable before redirecting.
 
-- Join any public room
-- Enter a display name
-- Start chatting instantly
-
-### Authenticated Mode
-
-- Sign up
-- Login
-- Logout
-- Display authenticated user information
-
-### Chat Features
-
-- Create / join room
-- Real-time messaging
-- Message history loading
-- Online users list
-- Join notification
-- Leave notification
-
-### Stretch Features
-
-- Typing indicator
-- Emoji support
-- Dark mode
-- Responsive design
+### Chat Features (Completed)
+- Header displaying current room name with active user count badges.
+- Sidebar highlighting the currently active room.
+- Dynamic room navigation: Clicking a room updates user context, reloads page, and resets mock chat state.
+- Interactive message logs: Submitting messages appends them immediately to the chat viewport.
+- Collapsible side navigation for small/mobile viewports.
 
 ---
 
-## 6. Database Design
+## 6. Database Design (Planned for Milestone 2)
 
 | Collection | Fields | Notes |
 | --- | --- | --- |
-| `rooms` | `_id`, `roomName`, `createdAt` | Stores room metadata and creation timestamp |
-| `messages` | `_id`, `roomId`, `username`, `firebaseUid` (optional), `message`, `createdAt` | Stores chat history per room |
+| `rooms` | `_id`, `roomName`, `createdAt` | Will store room metadata and creation timestamp |
+| `messages` | `_id`, `roomId`, `username`, `firebaseUid` (optional), `message`, `createdAt` | Will store chat history per room |
 
 ---
 
-## 7. API Summary
+## 7. API Summary (Planned for Milestone 3)
 
-### REST APIs
+### REST APIs (Planned)
 
 | Endpoint | Purpose |
 | --- | --- |
@@ -121,7 +99,7 @@ Students will gain practical experience with:
 | Join Room | Add a user to a room |
 | Get Message History | Load room messages |
 
-### Socket.IO Events
+### Socket.IO Events (Planned)
 
 | Event | Purpose |
 | --- | --- |
@@ -137,69 +115,52 @@ Students will gain practical experience with:
 
 ## 8. Project Milestones
 
-| Milestone | Goal | Deliverables | Outcome |
+| Milestone | Goal | Deliverables | Status |
 | --- | --- | --- | --- |
-| 1 — Foundation | Set up project structure and UI | Git repository, Express server, HTML UI, join room screen, folder structure | Users can open the app and access join room page |
-| 2 — Database Integration | Connect MongoDB and store chat data | MongoDB Atlas connection, room management, store messages, load previous messages | Users can join a room and view stored history |
-| 3 — Real-Time Chat | Implement live communication | Socket.IO server/client, live messaging, join/leave notifications, online users | Multiple users can chat in real time |
-| 4 — Authentication & Deployment | Secure app and deploy to cloud | Firebase Authentication, sign up/login/logout, Firebase Hosting, Render backend deployment | Users can authenticate and use deployed app |
-
-### Milestone Concepts
-
-- Milestone 1: Express.js, static files, Bootstrap / Tailwind, Git, GitHub
-- Milestone 2: MongoDB, Mongoose, CRUD operations, REST APIs
-- Milestone 3: WebSockets, event-driven programming, real-time communication
-- Milestone 4: Firebase Authentication, user identity, environment variables, cloud deployment, production configuration
+| **1 — Foundation** | **Set up project structure and UI** | **Git repository, HTML/CSS UI, join room screen, client routing, folder structure** | **[COMPLETED]** |
+| 2 — Database Integration | Connect MongoDB and store chat data | MongoDB Atlas connection, room database, save/retrieve message history | [PENDING] |
+| 3 — Real-Time Chat | Implement live communication | Socket.IO server setup, live broadcasting, notifications, typing indicators | [PENDING] |
+| 4 — Auth & Deployment | Secure app and deploy to cloud | Firebase Authentication, login controls, Render backend, Firebase Hosting | [PENDING] |
 
 ---
 
-## 9. Final Deliverables
+## 9. Deliverables (Milestone 1)
 
-Students should submit:
-
-- GitHub repository
-- Live project URL
-- Source code
-- README
-- Project screenshots
-- Short demo video (optional)
-
----
-
-## 10. Project Architecture
+The following files constitute the Milestone 1 codebase structure:
 
 ```text
-HTML + Bootstrap / Tailwind
-            │
-            ▼
-    Vanilla JavaScript
-            │
- REST APIs + Socket.IO
-            │
-            ▼
-   Node.js + Express.js
-            │
-     ┌──────┴─────────┐
-     │                │
-     ▼                ▼
-MongoDB Atlas   Firebase Authentication
-            │
-            ▼
-Frontend → Firebase Hosting
-Backend  → Render
+openChat/
+├── backend/
+│   └── package.json (Dependency initial layout)
+├── frontend/
+│   ├── css/
+│   │   ├── chat.css (Styles for chat dashboard, message feed, and text inputs)
+│   │   ├── common.css (Custom color palette, global scrollbars, button variants, toasts)
+│   │   └── join-room.css (Glow backgrounds and join card stylings)
+│   ├── images/
+│   │   └── logo.png (OpenChat brand mark)
+│   ├── js/
+│   │   ├── chat.js (UI profile population, sidebar switches, and mock message event logs)
+│   │   ├── common.js (Avatar initials parser, toast popups, local storage APIs)
+│   │   └── join-room.js (Input validations, custom room creation, guest login form submit)
+│   ├── mockups/
+│   │   └── join-n-chat-room.png (Visual target mockups)
+│   ├── chat.html (Chat interface dashboard markup)
+│   └── index.html (Initial entry page markup)
+├── .gitattributes
+├── .gitignore
+└── README.md (This file)
 ```
 
 ---
 
-## 11. Learning Outcomes
+## 10. How to Run Locally
 
-By the end of this project, students will understand:
+Since this milestone is a static frontend prototype, no backend server execution is required yet:
 
-- How to plan a software project
-- How frontend and backend communicate
-- How REST APIs and WebSockets work together
-- How MongoDB stores application data
-- How Firebase Authentication secures applications
-- How to deploy a full-stack application
-- How to use Git and GitHub in a real project
-- How to present a portfolio-ready project during interviews
+1. Clone the repository and checkout the `milestone-1` branch:
+   ```bash
+   git checkout milestone-1
+   ```
+2. Open `frontend/index.html` directly in your web browser, or serve it using an editor static server extension (e.g. VS Code's Live Server).
+3. Test guest profile login, room navigation via the sidebar, and mock chat messages by typing inside the chat bar.
