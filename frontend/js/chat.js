@@ -2,13 +2,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Read user and room details
     const userData = appUtils.storage.get('openchat_user');
     
-    // Redirect if no session found
-    if (!userData || !userData.name || !userData.room) {
+    // Redirect if no session found or invalid properties
+    if (!userData || !userData.name || !userData.room || !userData.roomId) {
         window.location.href = 'index.html';
         return;
     }
 
-    const { name: userName, room: roomName } = userData;
+    const { name: userName, room: roomName, roomId } = userData;
 
     // 2. Display room and user information
     document.getElementById('current-user-name').textContent = userName;
@@ -21,32 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('chat-room-title').textContent = `# ${roomName}`;
     
-    // Handle Sidebar Active Room highlighting (Mock logic for UI purposes)
-    const sidebarRooms = document.querySelectorAll('.room-item');
-    let roomExists = false;
-    sidebarRooms.forEach(room => {
-        room.classList.remove('active');
-        if (room.getAttribute('data-room').toLowerCase() === roomName.toLowerCase()) {
-            room.classList.add('active');
-            roomExists = true;
-        }
-    });
-
-    // If room is new/custom, inject it into the sidebar
-    if (!roomExists) {
-        const roomList = document.getElementById('sidebar-room-list');
-        const newRoomEl = document.createElement('div');
-        newRoomEl.className = 'room-item active';
-        newRoomEl.setAttribute('data-room', roomName);
-        newRoomEl.innerHTML = `
-            <div class="room-hash">#</div>
-            <div class="room-info">
-                <span class="room-name">${roomName}</span>
-                <span class="room-online">1 online</span>
-            </div>
-        `;
-        roomList.prepend(newRoomEl);
-    }
+    // Set online count badge based on room type
+    const mockCounts = {
+        'general': 12,
+        'javascript': 8,
+        'movies': 5,
+        'sports': 7
+    };
+    const activeCount = mockCounts[roomName.toLowerCase()] || 1;
+    document.getElementById('chat-room-count').textContent = `${activeCount} members online`;
 
     const chatMessagesContainer = document.getElementById('chat-messages');
 
@@ -56,31 +39,34 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Helper: Render Notification
-    const renderNotification = (text, type = 'join') => {
+    const renderNotification = (text, type = 'join', timestamp = new Date()) => {
         const div = document.createElement('div');
         div.className = `message-notification ${type === 'leave' ? 'leave' : ''}`;
-        
-        const icon = type === 'leave' ? '👋' : '👋'; // simplified emoji for demo
+        const icon = type === 'leave' ? '👋' : '👋'; 
         
         div.innerHTML = `
             <span class="notification-text">${icon} ${text}</span>
-            <span class="notification-time">${appUtils.formatTime()}</span>
+            <span class="notification-time">${appUtils.formatTime(timestamp)}</span>
         `;
         chatMessagesContainer.appendChild(div);
         scrollToBottom();
     };
 
     // Helper: Render Chat Message
-    const renderMessage = (author, text, colorClass = myColor) => {
+    const renderMessage = (author, text, colorClass = 'orange', timestamp = new Date()) => {
         const isMe = author.toLowerCase() === userName.toLowerCase();
+        
+        // Use standard author color class if it is not me, or myColor if it is me
+        const authorColor = isMe ? myColor : colorClass;
+        
         const div = document.createElement('div');
         div.className = `message ${isMe ? 'me' : ''}`;
         div.innerHTML = `
-            <div class="message-avatar ${colorClass}">${appUtils.getInitials(author)}</div>
+            <div class="message-avatar ${authorColor}">${appUtils.getInitials(author)}</div>
             <div class="message-content">
                 <div class="message-header">
-                    <span class="message-author ${colorClass}">${author}</span>
-                    <span class="message-time">${appUtils.formatTime()}</span>
+                    <span class="message-author ${authorColor}">${author}</span>
+                    <span class="message-time">${appUtils.formatTime(timestamp)}</span>
                 </div>
                 <div class="message-text">${text}</div>
             </div>
@@ -89,32 +75,92 @@ document.addEventListener('DOMContentLoaded', () => {
         scrollToBottom();
     };
 
-    // Initial mock events
-    setTimeout(() => {
-        renderNotification(`${userName} joined the room`);
-    }, 500);
+    // 3. Load rooms and populate sidebar dynamically
+    const loadSidebarRooms = async () => {
+        try {
+            const rooms = await appApi.fetchRooms();
+            const roomList = document.getElementById('sidebar-room-list');
+            roomList.innerHTML = '';
+            
+            rooms.forEach(room => {
+                const isActive = room._id === roomId;
+                const roomItem = document.createElement('div');
+                roomItem.className = `room-item ${isActive ? 'active' : ''}`;
+                roomItem.setAttribute('data-id', room._id);
+                roomItem.setAttribute('data-room', room.roomName);
+                
+                const count = mockCounts[room.roomName.toLowerCase()] || 1;
+                
+                roomItem.innerHTML = `
+                    <div class="room-hash">#</div>
+                    <div class="room-info">
+                        <span class="room-name">${room.roomName}</span>
+                        <span class="room-online">${count} online</span>
+                    </div>
+                `;
+                roomList.appendChild(roomItem);
+                
+                // Event listener for room switching
+                roomItem.addEventListener('click', () => {
+                    if (room._id !== roomId) {
+                        userData.roomId = room._id;
+                        userData.room = room.roomName;
+                        appUtils.storage.set('openchat_user', userData);
+                        window.location.reload();
+                    }
+                    
+                    const chatSidebar = document.getElementById('chat-sidebar');
+                    if (chatSidebar && chatSidebar.classList.contains('visible')) {
+                        chatSidebar.classList.remove('visible');
+                    }
+                });
+            });
+        } catch (error) {
+            appUtils.showToast('Failed to load rooms list', 'error');
+        }
+    };
 
-    // Mock incoming message for demonstration
-    setTimeout(() => {
-        renderMessage('Alice', 'Hello everyone! 👋', 'green');
-    }, 2000);
+    // 4. Load message history for active room
+    const loadMessageHistory = async () => {
+        try {
+            const messages = await appApi.fetchMessages(roomId);
+            chatMessagesContainer.innerHTML = '';
+            
+            if (messages.length === 0) {
+                // Seeding a join notification if chat is empty
+                renderNotification(`${userName} joined the room`);
+            } else {
+                messages.forEach(msg => {
+                    const hashChar = msg.username.charCodeAt(0) || 0;
+                    const randomColor = colors[hashChar % colors.length];
+                    renderMessage(msg.username, msg.message, randomColor, msg.createdAt);
+                });
+            }
+        } catch (error) {
+            appUtils.showToast('Failed to load chat history', 'error');
+        }
+    };
 
-    // 3. Sending messages (initially mock/local)
+    // 5. Sending messages
     const chatForm = document.getElementById('chat-form');
     const messageInput = document.getElementById('message-input');
 
-    chatForm.addEventListener('submit', (e) => {
+    chatForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const text = messageInput.value.trim();
         if (!text) return;
 
-        // Render own message
-        renderMessage(userName, text, myColor);
-        
-        // Clear input
-        messageInput.value = '';
-        messageInput.focus();
+        try {
+            const savedMsg = await appApi.sendMessage(roomId, userName, text);
+            renderMessage(savedMsg.username, savedMsg.message, myColor, savedMsg.createdAt);
+            
+            // Clear input
+            messageInput.value = '';
+            messageInput.focus();
+        } catch (error) {
+            appUtils.showToast('Failed to send message', 'error');
+        }
     });
 
     // Handle leaving room
@@ -123,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'index.html';
     });
 
-    // Handle Create New Room button (redirect to index for now)
+    // Handle Create New Room button
     document.getElementById('btn-create-room').addEventListener('click', () => {
         window.location.href = 'index.html';
     });
@@ -145,20 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Handle switching rooms and closing sidebar on mobile when a room is clicked
-    document.querySelectorAll('.room-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const selectedRoom = item.getAttribute('data-room');
-            if (selectedRoom && selectedRoom.toLowerCase() !== roomName.toLowerCase()) {
-                userData.room = selectedRoom;
-                appUtils.storage.set('openchat_user', userData);
-                window.location.reload();
-                return;
-            }
-
-            if (chatSidebar && chatSidebar.classList.contains('visible')) {
-                chatSidebar.classList.remove('visible');
-            }
-        });
-    });
+    // Load dynamic data on initiation
+    loadSidebarRooms();
+    loadMessageHistory();
 });
