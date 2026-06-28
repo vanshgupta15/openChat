@@ -145,10 +145,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Close sidebar on mobile when a room is clicked
+    // Handle switching rooms and closing sidebar on mobile when a room is clicked
     document.querySelectorAll('.room-item').forEach(item => {
         item.addEventListener('click', () => {
-            if (chatSidebar.classList.contains('visible')) {
+            const selectedRoom = item.getAttribute('data-room');
+            if (selectedRoom && selectedRoom.toLowerCase() !== roomName.toLowerCase()) {
+                userData.room = selectedRoom;
+                appUtils.storage.set('openchat_user', userData);
+                window.location.reload();
+                return;
+            }
+
+            if (chatSidebar && chatSidebar.classList.contains('visible')) {
                 chatSidebar.classList.remove('visible');
             }
         });
