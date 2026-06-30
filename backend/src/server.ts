@@ -13,26 +13,31 @@ import { connectDB } from './config/db';
 import { RoomModel } from './models/room.model';
 
 const seedDefaultRooms = async (): Promise<void> => {
+  console.log('in server initialization in seedDefaultRooms method - Checking if default rooms need to be seeded...');
   try {
     const count = await RoomModel.countDocuments();
+    console.log(`in server initialization in seedDefaultRooms method - Found ${count} existing rooms.`);
     if (count === 0) {
-      console.log('Seeding default chat rooms...');
+      console.log('in server initialization in seedDefaultRooms method - Seeding default chat rooms...');
       const defaultRooms = ['General', 'JavaScript', 'Movies', 'Sports'];
       await RoomModel.insertMany(defaultRooms.map(roomName => ({ roomName })));
-      console.log('Default chat rooms seeded successfully.');
+      console.log('in server initialization in seedDefaultRooms method - Default chat rooms seeded successfully.');
+    } else {
+      console.log('in server initialization in seedDefaultRooms method - Rooms already seeded. Skipping.');
     }
   } catch (error) {
-    console.error('Error seeding default rooms:', error);
+    console.error('in server initialization in seedDefaultRooms method - Error seeding default rooms:', error);
   }
 };
 
 const startServer = async (): Promise<void> => {
+  console.log('in server initialization in startServer method - Starting server initialization sequence...');
   await connectDB();
   await seedDefaultRooms();
   
   const port = process.env.PORT || 5000;
   app.listen(port, () => {
-    console.log(`Server is running in dev mode on port ${port}`);
+    console.log(`in server initialization in startServer method - Server is running in dev mode on port ${port}`);
   });
 };
 

@@ -1,12 +1,13 @@
 import mongoose from 'mongoose';
 
 export const connectDB = async (): Promise<void> => {
+  const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/openchat';
+  console.log(`in db config layer in connectDB method - Attempting to connect to MongoDB at: ${mongoUri}`);
   try {
-    const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/openchat';
     await mongoose.connect(mongoUri);
-    console.log('MongoDB connected successfully');
+    console.log('in db config layer in connectDB method - MongoDB connected successfully.');
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    console.error('in db config layer in connectDB method - MongoDB connection error:', error);
     process.exit(1);
   }
 };

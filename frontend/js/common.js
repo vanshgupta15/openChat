@@ -1,12 +1,19 @@
 // Form validation helpers
 const isValidString = (str, minLength = 3, maxLength = 30) => {
-    if (!str || typeof str !== 'string') return false;
+    console.log(`in frontend common module in isValidString method - Checking string validity. Length limits: ${minLength}-${maxLength}. Value: "${str}"`);
+    if (!str || typeof str !== 'string') {
+        console.log('in frontend common module in isValidString method - Invalid: not a string or empty.');
+        return false;
+    }
     const trimmed = str.trim();
-    return trimmed.length >= minLength && trimmed.length <= maxLength;
+    const valid = trimmed.length >= minLength && trimmed.length <= maxLength;
+    console.log(`in frontend common module in isValidString method - Validation result: ${valid}`);
+    return valid;
 };
 
 // Toast Notification System
 const showToast = (message, type = 'error') => {
+    console.log(`in frontend common module in showToast method - Displaying toast notification. Type: ${type}, Message: "${message}"`);
     let container = document.getElementById('toast-container');
     if (!container) {
         container = document.createElement('div');
@@ -36,25 +43,30 @@ const formatTime = (dateString = new Date()) => {
 // Session storage helpers
 const storage = {
     set: (key, value) => {
+        console.log(`in frontend common module in storage.set method - Writing key "${key}" to sessionStorage:`, value);
         try {
             sessionStorage.setItem(key, JSON.stringify(value));
         } catch (e) {
-            console.error('Error saving to sessionStorage', e);
+            console.error('in frontend common module in storage.set method - Error saving to sessionStorage', e);
         }
     },
     get: (key) => {
         try {
             const item = sessionStorage.getItem(key);
-            return item ? JSON.parse(item) : null;
+            const val = item ? JSON.parse(item) : null;
+            console.log(`in frontend common module in storage.get method - Reading key "${key}" from sessionStorage. Found:`, val);
+            return val;
         } catch (e) {
-            console.error('Error reading from sessionStorage', e);
+            console.error('in frontend common module in storage.get method - Error reading from sessionStorage', e);
             return null;
         }
     },
     remove: (key) => {
+        console.log(`in frontend common module in storage.remove method - Removing key "${key}" from sessionStorage.`);
         sessionStorage.removeItem(key);
     },
     clear: () => {
+        console.log('in frontend common module in storage.clear method - Clearing sessionStorage.');
         sessionStorage.clear();
     }
 };

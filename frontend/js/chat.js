@@ -1,14 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('in frontend chat module in DOMContentLoaded event - Initializing chat view.');
+
     // 1. Read user and room details
     const userData = appUtils.storage.get('openchat_user');
+    console.log('in frontend chat module in DOMContentLoaded event - Loaded user session data:', userData);
     
     // Redirect if no session found or invalid properties
     if (!userData || !userData.name || !userData.room || !userData.roomId) {
+        console.warn('in frontend chat module in DOMContentLoaded event - Invalid or missing user session data. Redirecting to index.html.');
         window.location.href = 'index.html';
         return;
     }
 
     const { name: userName, room: roomName, roomId } = userData;
+    console.log(`in frontend chat module in DOMContentLoaded event - Session validated. User: "${userName}", Room: "${roomName}" (ID: ${roomId})`);
 
     // 2. Display room and user information
     document.getElementById('current-user-name').textContent = userName;
@@ -18,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const colors = ['green', 'purple', 'orange', 'pink'];
     const myColor = colors[Math.floor(Math.random() * colors.length)];
     document.getElementById('current-user-avatar').classList.add(myColor);
+    console.log(`in frontend chat module in DOMContentLoaded event - Assigned avatar color: ${myColor} to current user.`);
 
     document.getElementById('chat-room-title').textContent = `# ${roomName}`;
     
@@ -40,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Helper: Render Notification
     const renderNotification = (text, type = 'join', timestamp = new Date()) => {
+        console.log(`in frontend chat module in renderNotification method - Rendering system notification: "${text}"`);
         const div = document.createElement('div');
         div.className = `message-notification ${type === 'leave' ? 'leave' : ''}`;
         const icon = type === 'leave' ? '👋' : '👋'; 
@@ -54,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Helper: Render Chat Message
     const renderMessage = (author, text, colorClass = 'orange', timestamp = new Date()) => {
+        console.log(`in frontend chat module in renderMessage method - Rendering message from "${author}": "${text}"`);
         const isMe = author.toLowerCase() === userName.toLowerCase();
         
         // Use standard author color class if it is not me, or myColor if it is me
@@ -77,8 +85,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. Load rooms and populate sidebar dynamically
     const loadSidebarRooms = async () => {
+        console.log('in frontend chat module in loadSidebarRooms method - Starting to load sidebar rooms...');
         try {
             const rooms = await appApi.fetchRooms();
+            console.log(`in frontend chat module in loadSidebarRooms method - Successfully fetched ${rooms.length} sidebar rooms.`);
             const roomList = document.getElementById('sidebar-room-list');
             roomList.innerHTML = '';
             
@@ -102,11 +112,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Event listener for room switching
                 roomItem.addEventListener('click', () => {
+                    console.log(`in frontend chat module in sidebarRoomClick method - Switching room. User: "${userName}" -> New Room: "${room.roomName}" (ID: ${room._id})`);
                     if (room._id !== roomId) {
                         userData.roomId = room._id;
                         userData.room = room.roomName;
                         appUtils.storage.set('openchat_user', userData);
+                        console.log('in frontend chat module in sidebarRoomClick method - Updated session data. Reloading page.');
                         window.location.reload();
+                    } else {
+                        console.log('in frontend chat module in sidebarRoomClick method - Clicked current room. No action taken.');
                     }
                     
                     const chatSidebar = document.getElementById('chat-sidebar');
@@ -116,20 +130,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
         } catch (error) {
+            console.error('in frontend chat module in loadSidebarRooms method - Failed to load rooms list:', error);
             appUtils.showToast('Failed to load rooms list', 'error');
         }
     };
 
     // 4. Load message history for active room
     const loadMessageHistory = async () => {
+        console.log(`in frontend chat module in loadMessageHistory method - Starting load message history for roomId: ${roomId}`);
         try {
             const messages = await appApi.fetchMessages(roomId);
+            console.log(`in frontend chat module in loadMessageHistory method - Fetched ${messages.length} messages.`);
             chatMessagesContainer.innerHTML = '';
             
             if (messages.length === 0) {
+                console.log('in frontend chat module in loadMessageHistory method - Message history empty. Rendering join notification.');
                 // Seeding a join notification if chat is empty
                 renderNotification(`${userName} joined the room`);
             } else {
+                console.log('in frontend chat module in loadMessageHistory method - Iterating and rendering history messages...');
                 messages.forEach(msg => {
                     const hashChar = msg.username.charCodeAt(0) || 0;
                     const randomColor = colors[hashChar % colors.length];
@@ -137,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         } catch (error) {
+            console.error('in frontend chat module in loadMessageHistory method - Failed to load chat history:', error);
             appUtils.showToast('Failed to load chat history', 'error');
         }
     };
@@ -149,28 +169,37 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         
         const text = messageInput.value.trim();
-        if (!text) return;
+        console.log(`in frontend chat module in chatFormSubmit method - User submitting message: "${text}"`);
+        if (!text) {
+            console.log('in frontend chat module in chatFormSubmit method - Empty message. Aborting submission.');
+            return;
+        }
 
         try {
+            console.log(`in frontend chat module in chatFormSubmit method - Calling api.sendMessage for room: ${roomId}`);
             const savedMsg = await appApi.sendMessage(roomId, userName, text);
+            console.log('in frontend chat module in chatFormSubmit method - Message successfully saved by backend:', savedMsg);
             renderMessage(savedMsg.username, savedMsg.message, myColor, savedMsg.createdAt);
             
             // Clear input
             messageInput.value = '';
             messageInput.focus();
         } catch (error) {
+            console.error('in frontend chat module in chatFormSubmit method - Failed to send message:', error);
             appUtils.showToast('Failed to send message', 'error');
         }
     });
 
     // Handle leaving room
     document.getElementById('btn-leave-room').addEventListener('click', () => {
+        console.log('in frontend chat module in leaveRoom method - User clicked Leave Room. Clearing session data and redirecting.');
         appUtils.storage.remove('openchat_user');
         window.location.href = 'index.html';
     });
 
     // Handle Create New Room button
     document.getElementById('btn-create-room').addEventListener('click', () => {
+        console.log('in frontend chat module in createRoomNav method - Redirecting user to index.html (room selection/creation).');
         window.location.href = 'index.html';
     });
 
@@ -181,12 +210,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (sidebarToggle && chatSidebar) {
         sidebarToggle.addEventListener('click', () => {
+            console.log('in frontend chat module in sidebarToggle method - Opening mobile sidebar.');
             chatSidebar.classList.add('visible');
         });
     }
 
     if (sidebarClose && chatSidebar) {
         sidebarClose.addEventListener('click', () => {
+            console.log('in frontend chat module in sidebarClose method - Closing mobile sidebar.');
             chatSidebar.classList.remove('visible');
         });
     }
