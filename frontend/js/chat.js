@@ -26,27 +26,26 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log(`in frontend chat module in DOMContentLoaded event - Assigned avatar color: ${myColor} to current user.`);
 
     document.getElementById('chat-room-title').textContent = `# ${roomName}`;
-    
-    // Set online count badge based on room type
-    const mockCounts = {
-        'general': 12,
-        'javascript': 8,
-        'movies': 5,
-        'sports': 7
-    };
-    const activeCount = mockCounts[roomName.toLowerCase()] || 1;
-    document.getElementById('chat-room-count').textContent = `${activeCount} members online`;
+    document.getElementById('chat-room-count').textContent = '1 member online'; // Initialize with 1 (the user themselves)
 
     const chatMessagesContainer = document.getElementById('chat-messages');
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
 
-    // Helper: Scroll to bottom
+    // UI helper: Scroll to bottom
     const scrollToBottom = () => {
         chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
     };
 
-    // Helper: Render Notification
-    const renderNotification = (text, type = 'join', timestamp = new Date()) => {
-        console.log(`in frontend chat module in renderNotification method - Rendering system notification: "${text}"`);
+    // UI helper: Clear Message Input
+    const clearMessageInput = () => {
+        messageInput.value = '';
+        messageInput.focus();
+    };
+
+    // UI helper: Render/Display Notification
+    const displayNotification = (text, type = 'join', timestamp = new Date()) => {
+        console.log(`in frontend chat module in displayNotification method - Rendering system notification: "${text}"`);
         const div = document.createElement('div');
         div.className = `message-notification ${type === 'leave' ? 'leave' : ''}`;
         const icon = type === 'leave' ? '👋' : '👋'; 
@@ -59,13 +58,14 @@ document.addEventListener('DOMContentLoaded', () => {
         scrollToBottom();
     };
 
-    // Helper: Render Chat Message
-    const renderMessage = (author, text, colorClass = 'orange', timestamp = new Date()) => {
-        console.log(`in frontend chat module in renderMessage method - Rendering message from "${author}": "${text}"`);
+    // UI helper: Render/Display Chat Message
+    const displayMessage = (author, text, createdAt = new Date()) => {
+        console.log(`in frontend chat module in displayMessage method - Rendering message from "${author}": "${text}"`);
         const isMe = author.toLowerCase() === userName.toLowerCase();
         
-        // Use standard author color class if it is not me, or myColor if it is me
-        const authorColor = isMe ? myColor : colorClass;
+        // Find avatar color
+        const hashChar = author.charCodeAt(0) || 0;
+        const authorColor = isMe ? myColor : colors[hashChar % colors.length];
         
         const div = document.createElement('div');
         div.className = `message ${isMe ? 'me' : ''}`;
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="message-content">
                 <div class="message-header">
                     <span class="message-author ${authorColor}">${author}</span>
-                    <span class="message-time">${appUtils.formatTime(timestamp)}</span>
+                    <span class="message-time">${appUtils.formatTime(createdAt)}</span>
                 </div>
                 <div class="message-text">${text}</div>
             </div>
@@ -83,7 +83,99 @@ document.addEventListener('DOMContentLoaded', () => {
         scrollToBottom();
     };
 
-    // 3. Load rooms and populate sidebar dynamically
+    // UI helper: Display Online Users (sets online counts in the active header & current room item)
+    const displayOnlineUsers = (users) => {
+        console.log(`in frontend chat module in displayOnlineUsers method - Displaying online users in room ${roomId}. Count: ${users.length}`);
+        
+        // Update header subtitle
+        const count = users.length;
+        document.getElementById('chat-room-count').textContent = `${count} ${count === 1 ? 'member' : 'members'} online`;
+        
+        // Update members list badge
+        const membersBtn = document.querySelector('button[title="Members"] span');
+        if (membersBtn) {
+            membersBtn.textContent = count;
+        }
+
+        // Update active room online count in the sidebar
+        const roomEl = document.querySelector(`.room-item[data-id="${roomId}"] .room-online`);
+        if (roomEl) {
+            roomEl.textContent = `${count} online`;
+        }
+    };
+
+    // 3. Socket communication setup
+    const initializeChat = () => {
+        console.log('in frontend chat module in initializeChat method - Connecting and registering Socket.IO events...');
+        
+        // Connect to the socket server
+        appSocket.connectSocket('http://localhost:5000');
+
+        // Listen for new messages
+        appSocket.listenForMessages((msg) => {
+            console.log('in frontend chat module in initializeChat - Received message event:', msg);
+            displayMessage(msg.username, msg.message, msg.createdAt);
+        });
+
+        // Listen for user joined notification
+        appSocket.listenForUserJoined((data) => {
+            console.log('in frontend chat module in initializeChat - User joined event:', data);
+            displayNotification(data.message, 'join', data.timestamp);
+        });
+
+        // Listen for user left notification
+        appSocket.listenForUserLeft((data) => {
+            console.log('in frontend chat module in initializeChat - User left event:', data);
+            displayNotification(data.message, 'leave', data.timestamp);
+        });
+
+        // Listen for the online user list updates
+        appSocket.listenForOnlineUsers((users) => {
+            console.log('in frontend chat module in initializeChat - Received updated online users list:', users);
+            displayOnlineUsers(users);
+        });
+
+        // Listen for a specific room's count updates
+        appSocket.listenForRoomCounts(({ roomId: rId, count }) => {
+            console.log(`in frontend chat module in initializeChat - Room count update for room ${rId}: ${count}`);
+            const roomEl = document.querySelector(`.room-item[data-id="${rId}"] .room-online`);
+            if (roomEl) {
+                roomEl.textContent = `${count} online`;
+            }
+            if (rId === roomId) {
+                // If it is the current room, update header elements too
+                document.getElementById('chat-room-count').textContent = `${count} ${count === 1 ? 'member' : 'members'} online`;
+                const membersBtn = document.querySelector('button[title="Members"] span');
+                if (membersBtn) {
+                    membersBtn.textContent = count;
+                }
+            }
+        });
+
+        // Listen for all room counts sent during handshake
+        appSocket.listenForAllRoomCounts((counts) => {
+            console.log('in frontend chat module in initializeChat - Received all active room counts:', counts);
+            Object.keys(counts).forEach(rId => {
+                const count = counts[rId];
+                const roomEl = document.querySelector(`.room-item[data-id="${rId}"] .room-online`);
+                if (roomEl) {
+                    roomEl.textContent = `${count} online`;
+                }
+                if (rId === roomId) {
+                    document.getElementById('chat-room-count').textContent = `${count} ${count === 1 ? 'member' : 'members'} online`;
+                    const membersBtn = document.querySelector('button[title="Members"] span');
+                    if (membersBtn) {
+                        membersBtn.textContent = count;
+                    }
+                }
+            });
+        });
+
+        // Emit room join event
+        appSocket.joinRoom(userName, roomId);
+    };
+
+    // 4. Load rooms and populate sidebar dynamically
     const loadSidebarRooms = async () => {
         console.log('in frontend chat module in loadSidebarRooms method - Starting to load sidebar rooms...');
         try {
@@ -99,7 +191,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 roomItem.setAttribute('data-id', room._id);
                 roomItem.setAttribute('data-room', room.roomName);
                 
-                const count = mockCounts[room.roomName.toLowerCase()] || 1;
+                // Initialize rooms with 0 online (active room will be updated by server immediately after join)
+                const count = isActive ? 1 : 0;
                 
                 roomItem.innerHTML = `
                     <div class="room-hash">#</div>
@@ -114,6 +207,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 roomItem.addEventListener('click', () => {
                     console.log(`in frontend chat module in sidebarRoomClick method - Switching room. User: "${userName}" -> New Room: "${room.roomName}" (ID: ${room._id})`);
                     if (room._id !== roomId) {
+                        // Notify the server about leaving the current room before reloading/unloading
+                        appSocket.leaveRoom(userName, roomId);
+                        appSocket.disconnectSocket();
+                        
                         userData.roomId = room._id;
                         userData.room = room.roomName;
                         appUtils.storage.set('openchat_user', userData);
@@ -135,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // 4. Load message history for active room
+    // 5. Load message history for active room
     const loadMessageHistory = async () => {
         console.log(`in frontend chat module in loadMessageHistory method - Starting load message history for roomId: ${roomId}`);
         try {
@@ -144,15 +241,12 @@ document.addEventListener('DOMContentLoaded', () => {
             chatMessagesContainer.innerHTML = '';
             
             if (messages.length === 0) {
-                console.log('in frontend chat module in loadMessageHistory method - Message history empty. Rendering join notification.');
-                // Seeding a join notification if chat is empty
-                renderNotification(`${userName} joined the room`);
+                console.log('in frontend chat module in loadMessageHistory method - Message history empty. Rendering welcome notification.');
+                displayNotification(`Welcome to the #${roomName} room!`);
             } else {
-                console.log('in frontend chat module in loadMessageHistory method - Iterating and rendering history messages...');
+                console.log('in frontend chat module in loadMessageHistory method - Rendering history messages...');
                 messages.forEach(msg => {
-                    const hashChar = msg.username.charCodeAt(0) || 0;
-                    const randomColor = colors[hashChar % colors.length];
-                    renderMessage(msg.username, msg.message, randomColor, msg.createdAt);
+                    displayMessage(msg.username, msg.message, msg.createdAt);
                 });
             }
         } catch (error) {
@@ -161,11 +255,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // 5. Sending messages
-    const chatForm = document.getElementById('chat-form');
-    const messageInput = document.getElementById('message-input');
-
-    chatForm.addEventListener('submit', async (e) => {
+    // 6. Sending messages via socket.js
+    chatForm.addEventListener('submit', (e) => {
         e.preventDefault();
         
         const text = messageInput.value.trim();
@@ -176,30 +267,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            console.log(`in frontend chat module in chatFormSubmit method - Calling api.sendMessage for room: ${roomId}`);
-            const savedMsg = await appApi.sendMessage(roomId, userName, text);
-            console.log('in frontend chat module in chatFormSubmit method - Message successfully saved by backend:', savedMsg);
-            renderMessage(savedMsg.username, savedMsg.message, myColor, savedMsg.createdAt);
+            console.log(`in frontend chat module in chatFormSubmit method - Sending message via socket: ${roomId}`);
+            appSocket.sendMessage(roomId, userName, text);
             
-            // Clear input
-            messageInput.value = '';
-            messageInput.focus();
+            // Clear input field and refocus
+            clearMessageInput();
         } catch (error) {
             console.error('in frontend chat module in chatFormSubmit method - Failed to send message:', error);
             appUtils.showToast('Failed to send message', 'error');
         }
     });
 
-    // Handle leaving room
+    // Handle leaving room (clears session and returns to join page)
     document.getElementById('btn-leave-room').addEventListener('click', () => {
         console.log('in frontend chat module in leaveRoom method - User clicked Leave Room. Clearing session data and redirecting.');
+        appSocket.leaveRoom(userName, roomId);
+        appSocket.disconnectSocket();
         appUtils.storage.remove('openchat_user');
         window.location.href = 'index.html';
     });
 
-    // Handle Create New Room button
+    // Handle Create New Room button (redirects to join page)
     document.getElementById('btn-create-room').addEventListener('click', () => {
         console.log('in frontend chat module in createRoomNav method - Redirecting user to index.html (room selection/creation).');
+        appSocket.leaveRoom(userName, roomId);
+        appSocket.disconnectSocket();
         window.location.href = 'index.html';
     });
 
@@ -222,7 +314,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Load dynamic data on initiation
-    loadSidebarRooms();
-    loadMessageHistory();
+    // Initialize sidebar list, history, and then establish real-time socket connections
+    (async () => {
+        await loadSidebarRooms();
+        await loadMessageHistory();
+        initializeChat();
+    })();
 });

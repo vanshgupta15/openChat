@@ -11,6 +11,9 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 import app from './app';
 import { connectDB } from './config/db';
 import { RoomModel } from './models/room.model';
+import http from 'http';
+import { initializeSocket } from './config/socket';
+import { handleConnection } from './sockets/socket.handler';
 
 const seedDefaultRooms = async (): Promise<void> => {
   console.log('in server initialization in seedDefaultRooms method - Checking if default rooms need to be seeded...');
@@ -36,8 +39,15 @@ const startServer = async (): Promise<void> => {
   await seedDefaultRooms();
   
   const port = process.env.PORT || 5000;
-  app.listen(port, () => {
-    console.log(`in server initialization in startServer method - Server is running in dev mode on port ${port}`);
+  const server = http.createServer(app);
+  const io = initializeSocket(server);
+
+  io.on('connection', (socket) => {
+    handleConnection(socket, io);
+  });
+
+  server.listen(port, () => {
+    console.log(`in server initialization in startServer method - Server (with Socket.IO) is running in dev mode on port ${port}`);
   });
 };
 
