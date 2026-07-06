@@ -1,11 +1,21 @@
 let socket = null;
 
 const socketManager = {
-    connectSocket(url) {
+    async connectSocket(url) {
         console.log('in frontend socket manager in connectSocket method - Connecting to socket server at', url);
-        socket = io(url);
-        this.registerSocketEvents();
-        return socket;
+        try {
+            const token = await window.appAuth.getIdToken();
+            socket = io(url, {
+                auth: {
+                    token: token
+                }
+            });
+            this.registerSocketEvents();
+            return socket;
+        } catch (error) {
+            console.error('in frontend socket manager in connectSocket method - Socket connection token retrieval failed:', error);
+            throw error;
+        }
     },
     
     disconnectSocket() {
@@ -16,24 +26,24 @@ const socketManager = {
         }
     },
     
-    joinRoom(username, roomId) {
+    joinRoom(roomId) {
         if (socket) {
-            console.log(`in frontend socket manager in joinRoom method - Emitting join-room for user "${username}" in room ${roomId}`);
-            socket.emit('join-room', { username, roomId });
+            console.log(`in frontend socket manager in joinRoom method - Emitting join-room for room ${roomId}`);
+            socket.emit('join-room', { roomId });
         }
     },
     
-    sendMessage(roomId, username, message) {
+    sendMessage(roomId, message) {
         if (socket) {
             console.log(`in frontend socket manager in sendMessage method - Emitting send-message to room ${roomId}`);
-            socket.emit('send-message', { roomId, username, message });
+            socket.emit('send-message', { roomId, message });
         }
     },
     
-    leaveRoom(username, roomId) {
+    leaveRoom(roomId) {
         if (socket) {
             console.log(`in frontend socket manager in leaveRoom method - Emitting leave-room for room ${roomId}`);
-            socket.emit('leave-room', { username, roomId });
+            socket.emit('leave-room', { roomId });
         }
     },
     

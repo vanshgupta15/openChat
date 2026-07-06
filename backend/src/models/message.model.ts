@@ -2,7 +2,9 @@ import { Schema, model, Document, Types } from 'mongoose';
 
 export interface IMessageDocument extends Document {
   roomId: Types.ObjectId;
-  username: string;
+  userId: string;
+  displayName: string;
+  photoURL: string;
   message: string;
   createdAt: Date;
 }
@@ -13,9 +15,19 @@ const messageSchema = new Schema<IMessageDocument>({
     ref: 'Room',
     required: true,
   },
-  username: {
+  userId: {
     type: String,
     required: true,
+    trim: true,
+  },
+  displayName: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  photoURL: {
+    type: String,
+    default: '',
     trim: true,
   },
   message: {

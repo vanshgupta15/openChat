@@ -1,13 +1,18 @@
 export interface Message {
   _id: string;
   roomId: string;
-  username: string;
+  userId: string;
+  displayName: string;
+  photoURL: string;
   message: string;
   createdAt: Date;
 }
 
 export interface CreateMessageRequest {
   roomId: string;
-  username: string;
+  userId: string;
+  displayName: string;
+  photoURL: string;
   message: string;
 }
+

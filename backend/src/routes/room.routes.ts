@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import * as roomController from '../controllers/room.controller';
+import { verifyFirebaseToken } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.get('/', roomController.getRooms);
-router.post('/', roomController.createRoom);
-router.get('/:id', roomController.getRoomById);
+router.get('/', verifyFirebaseToken, roomController.getRooms);
+router.post('/', verifyFirebaseToken, roomController.createRoom);
+router.get('/:id', verifyFirebaseToken, roomController.getRoomById);
 
 export default router;

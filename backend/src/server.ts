@@ -13,7 +13,8 @@ import { connectDB } from './config/db';
 import { RoomModel } from './models/room.model';
 import http from 'http';
 import { initializeSocket } from './config/socket';
-import { handleConnection } from './sockets/socket.handler';
+import { handleConnection } from './sockets/connection.socket';
+import { initializeFirebase } from './config/firebase';
 
 const seedDefaultRooms = async (): Promise<void> => {
   console.log('in server initialization in seedDefaultRooms method - Checking if default rooms need to be seeded...');
@@ -35,6 +36,7 @@ const seedDefaultRooms = async (): Promise<void> => {
 
 const startServer = async (): Promise<void> => {
   console.log('in server initialization in startServer method - Starting server initialization sequence...');
+  initializeFirebase();
   await connectDB();
   await seedDefaultRooms();
   

@@ -1,16 +1,33 @@
 export interface SocketUser {
   socketId: string;
-  username: string;
+  userId: string;
+  displayName: string;
+  photoURL: string;
   roomId: string;
 }
 
 export interface JoinRoomPayload {
-  username: string;
   roomId: string;
 }
 
 export interface SendMessagePayload {
   roomId: string;
-  username: string;
   message: string;
 }
+
+export interface OnlineUser {
+  userId: string;
+  displayName: string;
+  photoURL: string;
+}
+
+export interface SocketMessage {
+  _id: string;
+  roomId: string;
+  userId: string;
+  displayName: string;
+  photoURL: string;
+  message: string;
+  createdAt: Date;
+}
+

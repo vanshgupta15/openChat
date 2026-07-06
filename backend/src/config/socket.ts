@@ -1,5 +1,6 @@
 import { Server as HttpServer } from 'http';
 import { Server } from 'socket.io';
+import * as authService from '../services/auth.service';
 
 let io: Server | null = null;
 
@@ -11,6 +12,29 @@ export const initializeSocket = (server: HttpServer): Server => {
       methods: ['GET', 'POST'],
     },
   });
+
+  // Socket.IO middleware for authentication
+  io.use(async (socket, next) => {
+    const token = socket.handshake.auth?.token;
+    console.log(`in socket config layer - Authenticating socket connection: ${socket.id}`);
+    
+    if (!token) {
+      console.warn(`in socket config layer - Authentication failed: Token is missing.`);
+      return next(new Error('Authentication error: Token is required'));
+    }
+
+    try {
+      const decoded = await authService.verifyIdToken(token);
+      const user = authService.extractUser(decoded);
+      socket.data.user = user;
+      console.log(`in socket config layer - Socket connection authenticated for UID: ${user.uid}`);
+      next();
+    } catch (error) {
+      console.error(`in socket config layer - Token verification failed for socket: ${socket.id}:`, error);
+      return next(new Error('Authentication error: Invalid token'));
+    }
+  });
+
   return io;
 };
 

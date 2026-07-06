@@ -24,12 +24,21 @@ export const getMessages = async (req: Request, res: Response, next: NextFunctio
 };
 
 export const createMessage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const { roomId, username, message } = req.body;
-  console.log(`in messages controller layer in createMessage method - Request received to post message in roomId: ${roomId} by user: "${username}"`);
+  const { roomId, message } = req.body;
+  const user = (req as any).user;
+  
+  if (!user) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
+  }
+  
+  const { uid: userId, displayName, photoURL } = user;
+  console.log(`in messages controller layer in createMessage method - Request received to post message in roomId: ${roomId} by user: "${displayName}"`);
+  
   try {
-    if (!roomId || !username || !message) {
-      console.warn('in messages controller layer in createMessage method - Validation failed: roomId, username, and message are required.');
-      res.status(400).json({ message: 'roomId, username, and message are required' });
+    if (!roomId || !message) {
+      console.warn('in messages controller layer in createMessage method - Validation failed: roomId and message are required.');
+      res.status(400).json({ message: 'roomId and message are required' });
       return;
     }
 
@@ -41,7 +50,7 @@ export const createMessage = async (req: Request, res: Response, next: NextFunct
       return;
     }
 
-    const savedMessage = await messageService.saveMessage(roomId, username, message);
+    const savedMessage = await messageService.saveMessage(roomId, userId, displayName, photoURL, message);
     console.log(`in messages controller layer in createMessage method - Message successfully saved with ID: ${savedMessage._id} in roomId: ${roomId}`);
     res.status(201).json(savedMessage);
   } catch (error) {

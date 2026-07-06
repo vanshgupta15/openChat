@@ -5,8 +5,14 @@ export const getMessagesByRoom = async (roomId: string): Promise<IMessageDocumen
   return await MessageModel.find({ roomId }).sort({ createdAt: 1 });
 };
 
-export const saveMessage = async (roomId: string, username: string, message: string): Promise<IMessageDocument> => {
-  console.log(`in messages service layer in saveMessage method - Saving new MessageModel in roomId: ${roomId} by username: "${username}"`);
-  const newMessage = new MessageModel({ roomId, username, message });
+export const saveMessage = async (
+  roomId: string,
+  userId: string,
+  displayName: string,
+  photoURL: string,
+  message: string
+): Promise<IMessageDocument> => {
+  console.log(`in messages service layer in saveMessage method - Saving new MessageModel in roomId: ${roomId} by user: "${displayName}"`);
+  const newMessage = new MessageModel({ roomId, userId, displayName, photoURL, message });
   return await newMessage.save();
 };

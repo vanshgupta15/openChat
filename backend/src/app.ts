@@ -5,6 +5,7 @@ import { notFound } from './middleware/notFound.middleware';
 import { errorHandler } from './middleware/error.middleware';
 import roomRoutes from './routes/room.routes';
 import messageRoutes from './routes/message.routes';
+import { registerAuthRoutes } from './routes/auth.routes';
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 app.use(logger);
 
 // Mount API routes
+app.use('/api/auth', registerAuthRoutes());
 app.use('/api/rooms', roomRoutes);
 app.use('/api/messages', messageRoutes);
 

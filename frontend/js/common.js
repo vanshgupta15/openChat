@@ -40,6 +40,33 @@ const formatTime = (dateString = new Date()) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
+const formatDate = (dateString = new Date()) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+// Loader overlay helpers
+const showLoader = () => {
+    console.log('in frontend common module in showLoader method - Showing loader.');
+    let loader = document.getElementById('app-loader');
+    if (!loader) {
+        loader = document.createElement('div');
+        loader.id = 'app-loader';
+        loader.className = 'app-loader-overlay';
+        loader.innerHTML = '<div class="spinner"></div>';
+        document.body.appendChild(loader);
+    }
+    loader.classList.add('visible');
+};
+
+const hideLoader = () => {
+    console.log('in frontend common module in hideLoader method - Hiding loader.');
+    const loader = document.getElementById('app-loader');
+    if (loader) {
+        loader.classList.remove('visible');
+    }
+};
+
 // Session storage helpers
 const storage = {
     set: (key, value) => {
@@ -86,6 +113,9 @@ window.appUtils = {
     isValidString,
     showToast,
     formatTime,
+    formatDate,
+    showLoader,
+    hideLoader,
     storage,
     getInitials
 };
