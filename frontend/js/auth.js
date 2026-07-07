@@ -29,10 +29,10 @@ const authManager = {
             if (!isInitialized) await this.initializeFirebase();
             const provider = new firebase.auth.GoogleAuthProvider();
             const result = await authInstance.signInWithPopup(provider);
-            console.log('in frontend auth module in loginWithGoogle method - Google Sign-In successful for:', result.user.displayName);
+            console.log('in frontend auth module in loginWithGoogle method - Google Sign-In successful for:', JSON.stringify(result.user));
             return result.user;
         } catch (error) {
-            console.error('in frontend auth module in loginWithGoogle method - Google Sign-In error:', error);
+            console.error('in frontend auth module in loginWithGoogle method - Google Sign-In error:', JSON.stringify(error));
             throw error;
         }
     },
