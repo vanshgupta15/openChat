@@ -6,9 +6,24 @@ let firebaseApp: any = null;
 export const initializeFirebase = (): void => {
   console.log('in firebase config layer in initializeFirebase method - Initializing Firebase Admin SDK...');
   try {
-    const projectId = process.env.FIREBASE_PROJECT_ID;
-    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    const stripQuotes = (str: string | undefined): string | undefined => {
+      if (!str) return str;
+      if (str.startsWith('"') && str.endsWith('"')) {
+        return str.slice(1, -1);
+      }
+      if (str.startsWith("'") && str.endsWith("'")) {
+        return str.slice(1, -1);
+      }
+      return str;
+    };
+
+    const projectId = stripQuotes(process.env.FIREBASE_PROJECT_ID);
+    const clientEmail = stripQuotes(process.env.FIREBASE_CLIENT_EMAIL);
+    let privateKey = stripQuotes(process.env.FIREBASE_PRIVATE_KEY);
+
+    if (privateKey) {
+      privateKey = privateKey.replace(/\\n/g, '\n');
+    }
 
     if (!projectId || !clientEmail || !privateKey) {
       console.warn('Firebase credentials missing from environment variables. Attempting application default credentials...');
