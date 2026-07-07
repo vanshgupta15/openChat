@@ -74,7 +74,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Access verification
             let isAuthorized = sessionStorage.getItem('room_auth_' + activeRoomId) === 'true';
             if (!isAuthorized) {
-                let passwordAttempt = prompt(`Enter password for room #${activeRoomName} (default is 2222):`);
+                let passwordAttempt = await window.appUtils.showCustomPrompt(
+                    'Access Password Required',
+                    `This room #${activeRoomName} is password-protected. Please enter the password to join.`,
+                    true,
+                    'Enter password...'
+                );
                 if (passwordAttempt === null) {
                     window.appUtils.showToast('Password is required to enter this room.', 'error');
                     window.appUtils.hideLoader();
@@ -355,8 +360,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Create New Room button inside sidebar
     document.getElementById('btn-create-room').addEventListener('click', async () => {
-        const roomName = prompt('Enter a new room name (3-30 characters):');
-        if (!roomName) return;
+        const roomName = await window.appUtils.showCustomPrompt(
+            'Create Chat Room',
+            'Enter a name for the new chat room (3-30 characters):',
+            true,
+            'Enter room name...',
+            false
+        );
+        if (roomName === null) return;
         
         const trimmed = roomName.trim();
         if (trimmed.length < 3 || trimmed.length > 30) {
@@ -364,8 +375,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        const roomPassword = prompt('Set a password for the new room (leave empty for default "2222"):');
-        const passwordToSet = roomPassword !== null ? roomPassword.trim() : '2222';
+        const roomPassword = await window.appUtils.showCustomPrompt(
+            'Set Room Password',
+            'Set a custom password for the new room (leave blank to use the default password):',
+            true,
+            'Enter password...'
+        );
+        if (roomPassword === null) return;
+        const passwordToSet = roomPassword.trim() || '2222';
 
         try {
             window.appUtils.showLoader();
@@ -411,7 +428,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const changePasswordBtn = document.getElementById('btn-change-password');
     if (changePasswordBtn) {
         changePasswordBtn.addEventListener('click', async () => {
-            const newPassword = prompt('Enter new password for this room:');
+            const newPassword = await window.appUtils.showCustomPrompt(
+                'Change Room Password',
+                'Enter a new password for this chat room:',
+                true,
+                'Enter new password...'
+            );
             if (newPassword === null) return;
             
             const trimmedPassword = newPassword.trim();

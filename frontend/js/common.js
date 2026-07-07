@@ -116,6 +116,71 @@ const getBackendUrl = () => {
     return 'https://openchat-bvzt.onrender.com';
 };
 
+// Reusable Custom Modal Dialogs (replacing window.prompt)
+const showCustomPrompt = (title, promptText, isCancelable = true, placeholder = 'Enter password...', isPassword = true) => {
+    return new Promise((resolve) => {
+        const existing = document.getElementById('custom-prompt-modal');
+        if (existing) existing.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'custom-prompt-modal';
+        overlay.className = 'modal-overlay';
+
+        const container = document.createElement('div');
+        container.className = 'modal-container';
+
+        const cancelBtnHtml = isCancelable 
+            ? `<button id="modal-cancel-btn" class="btn-outline" style="border-radius: var(--radius-md); padding: 8px 16px; font-size: 13px;">Cancel</button>` 
+            : '';
+
+        container.innerHTML = `
+            <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                <h3 style="font-size: 16px; text-transform: uppercase;">${title}</h3>
+            </div>
+            <div class="modal-body" style="margin: 16px 0;">
+                <p class="text-muted" style="margin-bottom: 12px; font-size: 14px; text-transform: none;">${promptText}</p>
+                <input type="${isPassword ? 'password' : 'text'}" id="modal-input-field" class="input-field" placeholder="${placeholder}" style="width: 100%;">
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+                ${cancelBtnHtml}
+                <button id="modal-submit-btn" class="btn-primary" style="width: auto; padding: 8px 20px; font-size: 13px;">Submit</button>
+            </div>
+        `;
+
+        overlay.appendChild(container);
+        document.body.appendChild(overlay);
+
+        const inputField = document.getElementById('modal-input-field');
+        inputField.focus();
+
+        const submit = () => {
+            const val = inputField.value;
+            overlay.remove();
+            resolve(val);
+        };
+
+        const cancel = () => {
+            overlay.remove();
+            resolve(null);
+        };
+
+        document.getElementById('modal-submit-btn').addEventListener('click', submit);
+        if (isCancelable) {
+            document.getElementById('modal-cancel-btn').addEventListener('click', cancel);
+        }
+
+        inputField.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submit();
+            } else if (e.key === 'Escape' && isCancelable) {
+                e.preventDefault();
+                cancel();
+            }
+        });
+    });
+};
+
 // Export to window for global access
 window.appUtils = {
     isValidString,
@@ -126,5 +191,6 @@ window.appUtils = {
     hideLoader,
     storage,
     getInitials,
-    getBackendUrl
+    getBackendUrl,
+    showCustomPrompt
 };
