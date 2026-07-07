@@ -1,134 +1,441 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Read user and room details
-    const userData = appUtils.storage.get('openchat_user');
-    
-    // Redirect if no session found
-    if (!userData || !userData.name || !userData.room) {
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('in frontend chat module in DOMContentLoaded event - Bootstrapping chat view.');
+
+    // 1. Initialize Firebase
+    try {
+        await window.appAuth.initializeFirebase();
+    } catch (err) {
+        console.error('Failed to initialize Firebase in chat.js:', err);
         window.location.href = 'index.html';
         return;
     }
 
-    const { name: userName, room: roomName } = userData;
+    let currentUser = null;
+    let activeRoomId = sessionStorage.getItem('openchat_active_room_id');
+    let activeRoomName = sessionStorage.getItem('openchat_active_room_name');
 
-    // 2. Display room and user information
-    document.getElementById('current-user-name').textContent = userName;
-    document.getElementById('current-user-avatar').textContent = appUtils.getInitials(userName);
-    
-    // Assign a random color class to the current user's avatar for consistency
-    const colors = ['green', 'purple', 'orange', 'pink'];
-    const myColor = colors[Math.floor(Math.random() * colors.length)];
-    document.getElementById('current-user-avatar').classList.add(myColor);
-
-    document.getElementById('chat-room-title').textContent = `# ${roomName}`;
-    
-    // Handle Sidebar Active Room highlighting (Mock logic for UI purposes)
-    const sidebarRooms = document.querySelectorAll('.room-item');
-    let roomExists = false;
-    sidebarRooms.forEach(room => {
-        room.classList.remove('active');
-        if (room.getAttribute('data-room').toLowerCase() === roomName.toLowerCase()) {
-            room.classList.add('active');
-            roomExists = true;
+    // 2. Observe Auth State
+    window.appAuth.observeAuthState(async (user) => {
+        if (!user) {
+            console.warn('in frontend chat module observeAuthState - User not authenticated. Redirecting to index.html.');
+            window.location.href = 'index.html';
+            return;
         }
+
+        currentUser = window.appAuth.getCurrentUser();
+        console.log('in frontend chat module observeAuthState - Authenticated user:', currentUser);
+
+        // Display current user profile
+        displayCurrentUser(currentUser);
+
+        // Load rooms sidebar and message history
+        await bootstrapChatFlow();
     });
 
-    // If room is new/custom, inject it into the sidebar
-    if (!roomExists) {
+    const displayCurrentUser = (user) => {
+        console.log(`in frontend chat module displayCurrentUser method - Rendering user profile: ${user.displayName}`);
+        document.getElementById('current-user-name').textContent = user.displayName;
+        const avatarEl = document.getElementById('current-user-avatar');
+        if (user.photoURL) {
+            avatarEl.innerHTML = `<img src="${user.photoURL}" alt="avatar" style="width:100%; height:100%; border-radius:50%; object-fit:cover; border: 1.5px solid var(--spidey-red);">`;
+            avatarEl.className = 'avatar'; 
+        } else {
+            avatarEl.textContent = appUtils.getInitials(user.displayName);
+            avatarEl.innerHTML = '';
+            const colors = ['green', 'purple', 'orange', 'pink'];
+            const myColor = colors[Math.floor(Math.random() * colors.length)];
+            avatarEl.className = `avatar ${myColor}`;
+        }
+    };
+
+    const bootstrapChatFlow = async () => {
+        try {
+            window.appUtils.showLoader();
+            
+            // Load rooms
+            const rooms = await appApi.fetchRooms();
+            if (rooms.length === 0) {
+                window.appUtils.showToast('No rooms available on server.', 'error');
+                window.appUtils.hideLoader();
+                return;
+            }
+
+            // Default to first room if activeRoomId is invalid/missing
+            const activeRoomExists = rooms.some(r => r._id === activeRoomId);
+            if (!activeRoomId || !activeRoomExists) {
+                activeRoomId = rooms[0]._id;
+                activeRoomName = rooms[0].roomName;
+                sessionStorage.setItem('openchat_active_room_id', activeRoomId);
+                sessionStorage.setItem('openchat_active_room_name', activeRoomName);
+            }
+
+            const activeRoom = rooms.find(r => r._id === activeRoomId);
+
+            // Access verification
+            console.log('Access verification check:', {
+                activeRoomId,
+                activeRoomName,
+                sessionStorageKey: 'room_auth_' + activeRoomId,
+                sessionStorageVal: sessionStorage.getItem('room_auth_' + activeRoomId)
+            });
+            
+            let isAuthorized = sessionStorage.getItem('room_auth_' + activeRoomId) === 'true';
+            if (!isAuthorized) {
+                console.log('Room not authorized yet. Launching prompt...');
+                let passwordAttempt = await window.appUtils.showCustomPrompt(
+                    'Access Password Required',
+                    `This room #${activeRoomName} is password-protected. Please enter the password to join.`,
+                    true,
+                    'Enter password...'
+                );
+                if (passwordAttempt === null) {
+                    window.appUtils.showToast('Password is required to enter this room.', 'error');
+                    window.appUtils.hideLoader();
+                    return;
+                }
+                try {
+                    await appApi.verifyRoomPassword(activeRoomId, passwordAttempt);
+                    sessionStorage.setItem('room_auth_' + activeRoomId, 'true');
+                    isAuthorized = true;
+                    window.appUtils.showToast('Joined room successfully!', 'success');
+                } catch (err) {
+                    window.appUtils.showToast('Invalid room password. Access denied.', 'error');
+                    window.appUtils.hideLoader();
+                    setTimeout(() => window.location.reload(), 1000);
+                    return;
+                }
+            } else {
+                console.log('Room already authorized in session storage.');
+            }
+
+            // Show/Hide Change Password button for room creator
+            const changePasswordBtn = document.getElementById('btn-change-password');
+            console.log('Creator check details:', {
+                activeRoom,
+                creatorId: activeRoom ? activeRoom.creatorId : 'no room',
+                currentUser,
+                uid: currentUser ? currentUser.uid : 'no user',
+                match: !!(activeRoom && currentUser && activeRoom.creatorId === currentUser.uid)
+            });
+            if (changePasswordBtn) {
+                if (activeRoom && activeRoom.creatorId && currentUser && activeRoom.creatorId === currentUser.uid) {
+                    console.log('User is the creator. Showing Change Password button.');
+                    changePasswordBtn.style.display = 'inline-flex';
+                } else {
+                    console.log('User is NOT the creator. Hiding Change Password button.');
+                    changePasswordBtn.style.display = 'none';
+                }
+            }
+
+            document.getElementById('chat-room-title').textContent = `# ${activeRoomName}`;
+            
+            // Populate sidebar list
+            renderSidebarRooms(rooms);
+            
+            // Load messages history
+            await loadMessageHistory();
+            
+            // Initialize Socket IO
+            console.log('in bootstrapChatFlow - About to call initializeChat...');
+            await initializeChat();
+            console.log('in bootstrapChatFlow - initializeChat completed.');
+        } catch (error) {
+            console.error('Error during chat flow bootstrap:', error);
+            window.appUtils.showToast('Failed to load chat components', 'error');
+        } finally {
+            window.appUtils.hideLoader();
+        }
+    };
+
+    const renderSidebarRooms = (rooms) => {
         const roomList = document.getElementById('sidebar-room-list');
-        const newRoomEl = document.createElement('div');
-        newRoomEl.className = 'room-item active';
-        newRoomEl.setAttribute('data-room', roomName);
-        newRoomEl.innerHTML = `
-            <div class="room-hash">#</div>
-            <div class="room-info">
-                <span class="room-name">${roomName}</span>
-                <span class="room-online">1 online</span>
-            </div>
-        `;
-        roomList.prepend(newRoomEl);
-    }
+        roomList.innerHTML = '';
+        
+        rooms.forEach(room => {
+            const isActive = room._id === activeRoomId;
+            const roomItem = document.createElement('div');
+            roomItem.className = `room-item ${isActive ? 'active' : ''}`;
+            roomItem.setAttribute('data-id', room._id);
+            roomItem.setAttribute('data-room', room.roomName);
+            
+            const count = isActive ? 1 : 0;
+            
+            roomItem.innerHTML = `
+                <div class="room-hash">#</div>
+                <div class="room-info">
+                    <span class="room-name">${room.roomName}</span>
+                    <span class="room-online">${count} online</span>
+                </div>
+            `;
+            roomList.appendChild(roomItem);
+            
+            // Sidebar room selection click listener
+            roomItem.addEventListener('click', () => {
+                console.log(`in frontend chat module sidebarClick - Selecting room: "${room.roomName}" (ID: ${room._id})`);
+                if (room._id !== activeRoomId) {
+                    appSocket.leaveRoom(activeRoomId);
+                    appSocket.disconnectSocket();
+                    
+                    // Clear authorization cache for all rooms so they must verify password when switching
+                    for (let i = 0; i < sessionStorage.length; i++) {
+                        const key = sessionStorage.key(i);
+                        if (key && key.startsWith('room_auth_')) {
+                            sessionStorage.removeItem(key);
+                            i--; // adjust index since we removed an item
+                        }
+                    }
+                    
+                    sessionStorage.setItem('openchat_active_room_id', room._id);
+                    sessionStorage.setItem('openchat_active_room_name', room.roomName);
+                    
+                    window.location.reload();
+                }
+            });
+        });
+    };
 
+    // UI helpers matching spec
     const chatMessagesContainer = document.getElementById('chat-messages');
-
-    // Helper: Scroll to bottom
+    
     const scrollToBottom = () => {
         chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
     };
 
-    // Helper: Render Notification
-    const renderNotification = (text, type = 'join') => {
+    const clearMessageBox = () => {
+        const messageInput = document.getElementById('message-input');
+        messageInput.value = '';
+        messageInput.focus();
+    };
+
+    const displayNotification = (text, type = 'join', timestamp = new Date()) => {
+        console.log(`in frontend chat module displayNotification - Rendering notification: "${text}"`);
         const div = document.createElement('div');
         div.className = `message-notification ${type === 'leave' ? 'leave' : ''}`;
-        
-        const icon = type === 'leave' ? '👋' : '👋'; // simplified emoji for demo
+        const icon = type === 'leave' ? '👋' : '👋'; 
         
         div.innerHTML = `
             <span class="notification-text">${icon} ${text}</span>
-            <span class="notification-time">${appUtils.formatTime()}</span>
+            <span class="notification-time">${appUtils.formatTime(timestamp)}</span>
         `;
         chatMessagesContainer.appendChild(div);
         scrollToBottom();
     };
 
-    // Helper: Render Chat Message
-    const renderMessage = (author, text, colorClass = myColor) => {
-        const isMe = author.toLowerCase() === userName.toLowerCase();
-        const div = document.createElement('div');
-        div.className = `message ${isMe ? 'me' : ''}`;
-        div.innerHTML = `
-            <div class="message-avatar ${colorClass}">${appUtils.getInitials(author)}</div>
-            <div class="message-content">
-                <div class="message-header">
-                    <span class="message-author ${colorClass}">${author}</span>
-                    <span class="message-time">${appUtils.formatTime()}</span>
+    const displayMessages = (messagesList) => {
+        chatMessagesContainer.innerHTML = '';
+        messagesList.forEach(msg => {
+            const isMe = msg.userId === currentUser.uid;
+            
+            const div = document.createElement('div');
+            div.className = `message ${isMe ? 'me' : ''}`;
+            
+            let avatarContent = `<div class="message-avatar">${appUtils.getInitials(msg.displayName)}</div>`;
+            if (msg.photoURL) {
+                avatarContent = `<div class="message-avatar" style="border: 1px solid var(--border-color);"><img src="${msg.photoURL}" alt="avatar" style="width:100%; height:100%; border-radius:50%; object-fit:cover;"></div>`;
+            }
+            
+            div.innerHTML = `
+                ${avatarContent}
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-author">${msg.displayName}</span>
+                        <span class="message-time">${appUtils.formatTime(msg.createdAt)}</span>
+                    </div>
+                    <div class="message-text">${msg.message}</div>
                 </div>
-                <div class="message-text">${text}</div>
-            </div>
-        `;
-        chatMessagesContainer.appendChild(div);
+            `;
+            chatMessagesContainer.appendChild(div);
+        });
         scrollToBottom();
     };
 
-    // Initial mock events
-    setTimeout(() => {
-        renderNotification(`${userName} joined the room`);
-    }, 500);
+    const displayOnlineUsers = (users) => {
+        console.log(`in frontend chat module displayOnlineUsers - Count: ${users.length}`);
+        const count = users.length;
+        document.getElementById('chat-room-count').textContent = `${count} ${count === 1 ? 'member' : 'members'} online`;
+        
+        const membersBtn = document.querySelector('button[title="Members"] span');
+        if (membersBtn) {
+            membersBtn.textContent = count;
+        }
 
-    // Mock incoming message for demonstration
-    setTimeout(() => {
-        renderMessage('Alice', 'Hello everyone! 👋', 'green');
-    }, 2000);
+        const roomEl = document.querySelector(`.room-item[data-id="${activeRoomId}"] .room-online`);
+        if (roomEl) {
+            roomEl.textContent = `${count} online`;
+        }
+    };
 
-    // 3. Sending messages (initially mock/local)
+    const loadMessageHistory = async () => {
+        console.log(`in frontend chat module loadMessageHistory - roomId: ${activeRoomId}`);
+        try {
+            const messages = await appApi.fetchMessages(activeRoomId);
+            if (messages.length === 0) {
+                chatMessagesContainer.innerHTML = '';
+                displayNotification(`Welcome to the #${activeRoomName} room!`);
+            } else {
+                displayMessages(messages);
+            }
+        } catch (error) {
+            console.error('Failed to load message history:', error);
+            appUtils.showToast('Failed to load message history', 'error');
+        }
+    };
+
+    const initializeChat = async () => {
+        console.log('in frontend chat module initializeChat - Starting initialization...');
+        console.log('in frontend chat module initializeChat - Connecting socket...');
+        await appSocket.connectSocket(window.appUtils.getBackendUrl());
+        console.log('in frontend chat module initializeChat - Socket connected.');
+
+        // Socket listeners
+        appSocket.listenForMessages((msg) => {
+            console.log('in frontend chat module initializeChat - Received receive-message event:', msg);
+            const isMe = msg.userId === currentUser.uid;
+            const div = document.createElement('div');
+            div.className = `message ${isMe ? 'me' : ''}`;
+            
+            let avatarContent = `<div class="message-avatar">${appUtils.getInitials(msg.displayName)}</div>`;
+            if (msg.photoURL) {
+                avatarContent = `<div class="message-avatar" style="border: 1px solid var(--border-color);"><img src="${msg.photoURL}" alt="avatar" style="width:100%; height:100%; border-radius:50%; object-fit:cover;"></div>`;
+            }
+            
+            div.innerHTML = `
+                ${avatarContent}
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-author">${msg.displayName}</span>
+                        <span class="message-time">${appUtils.formatTime(msg.createdAt)}</span>
+                    </div>
+                    <div class="message-text">${msg.message}</div>
+                </div>
+            `;
+            chatMessagesContainer.appendChild(div);
+            scrollToBottom();
+        });
+
+        appSocket.listenForUserJoined((data) => {
+            displayNotification(data.message, 'join', data.timestamp);
+        });
+
+        appSocket.listenForUserLeft((data) => {
+            displayNotification(data.message, 'leave', data.timestamp);
+        });
+
+        appSocket.listenForOnlineUsers((users) => {
+            displayOnlineUsers(users);
+        });
+
+        appSocket.listenForRoomCounts(({ roomId: rId, count }) => {
+            const roomEl = document.querySelector(`.room-item[data-id="${rId}"] .room-online`);
+            if (roomEl) {
+                roomEl.textContent = `${count} online`;
+            }
+            if (rId === activeRoomId) {
+                displayOnlineUsers({ length: count });
+            }
+        });
+
+        appSocket.listenForAllRoomCounts((counts) => {
+            Object.keys(counts).forEach(rId => {
+                const count = counts[rId];
+                const roomEl = document.querySelector(`.room-item[data-id="${rId}"] .room-online`);
+                if (roomEl) {
+                    roomEl.textContent = `${count} online`;
+                }
+                if (rId === activeRoomId) {
+                    displayOnlineUsers({ length: count });
+                }
+            });
+        });
+
+        // Join active room
+        console.log(`in frontend chat module initializeChat - Calling joinRoom for activeRoomId: ${activeRoomId}`);
+        appSocket.joinRoom(activeRoomId);
+        console.log('in frontend chat module initializeChat - joinRoom called.');
+    };
+
+    // Chat form submit
     const chatForm = document.getElementById('chat-form');
     const messageInput = document.getElementById('message-input');
 
-    chatForm.addEventListener('submit', (e) => {
+    chatForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
         const text = messageInput.value.trim();
         if (!text) return;
 
-        // Render own message
-        renderMessage(userName, text, myColor);
+        try {
+            appSocket.sendMessage(activeRoomId, text);
+            clearMessageBox();
+        } catch (error) {
+            console.error('Failed to send message:', error);
+            appUtils.showToast('Failed to send message', 'error');
+        }
+    });
+
+    // Sign out/Leave room button
+    document.getElementById('btn-leave-room').addEventListener('click', async () => {
+        console.log('in frontend chat module logout click - Logging out.');
+        appSocket.leaveRoom(activeRoomId);
+        appSocket.disconnectSocket();
         
-        // Clear input
-        messageInput.value = '';
-        messageInput.focus();
-    });
-
-    // Handle leaving room
-    document.getElementById('btn-leave-room').addEventListener('click', () => {
-        appUtils.storage.remove('openchat_user');
+        try {
+            await window.appAuth.logout();
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
         window.location.href = 'index.html';
     });
 
-    // Handle Create New Room button (redirect to index for now)
-    document.getElementById('btn-create-room').addEventListener('click', () => {
-        window.location.href = 'index.html';
+    // Create New Room button inside sidebar
+    document.getElementById('btn-create-room').addEventListener('click', async () => {
+        const roomName = await window.appUtils.showCustomPrompt(
+            'Create Chat Room',
+            'Enter a name for the new chat room (3-30 characters):',
+            true,
+            'Enter room name...',
+            false
+        );
+        if (roomName === null) return;
+        
+        const trimmed = roomName.trim();
+        if (trimmed.length < 3 || trimmed.length > 30) {
+            appUtils.showToast('Room name must be between 3 and 30 characters', 'error');
+            return;
+        }
+
+        const roomPassword = await window.appUtils.showCustomPrompt(
+            'Set Room Password',
+            'Set a custom password for the new room (leave blank to use the default password):',
+            true,
+            'Enter password...'
+        );
+        if (roomPassword === null) return;
+        const passwordToSet = roomPassword.trim() || '2222';
+
+        try {
+            window.appUtils.showLoader();
+            const createdRoom = await appApi.createRoom(trimmed, passwordToSet);
+            
+            // Auto authorize creator for this room
+            sessionStorage.setItem('room_auth_' + createdRoom._id, 'true');
+            
+            // Success: Switch to new room!
+            appSocket.leaveRoom(activeRoomId);
+            appSocket.disconnectSocket();
+            
+            sessionStorage.setItem('openchat_active_room_id', createdRoom._id);
+            sessionStorage.setItem('openchat_active_room_name', createdRoom.roomName);
+            
+            window.location.reload();
+        } catch (error) {
+            console.error('Create room error:', error);
+            appUtils.showToast(error.message || 'Failed to create room', 'error');
+        } finally {
+            window.appUtils.hideLoader();
+        }
     });
 
-    // Sidebar toggle logic for mobile responsiveness
+    // Sidebar toggles for mobile responsiveness
     const sidebarToggle = document.getElementById('sidebar-toggle');
     const sidebarClose = document.getElementById('sidebar-close');
     const chatSidebar = document.getElementById('chat-sidebar');
@@ -145,20 +452,35 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Handle switching rooms and closing sidebar on mobile when a room is clicked
-    document.querySelectorAll('.room-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const selectedRoom = item.getAttribute('data-room');
-            if (selectedRoom && selectedRoom.toLowerCase() !== roomName.toLowerCase()) {
-                userData.room = selectedRoom;
-                appUtils.storage.set('openchat_user', userData);
-                window.location.reload();
+    // Change Room Password button inside chat header
+    const changePasswordBtn = document.getElementById('btn-change-password');
+    if (changePasswordBtn) {
+        changePasswordBtn.addEventListener('click', async () => {
+            const newPassword = await window.appUtils.showCustomPrompt(
+                'Change Room Password',
+                'Enter a new password for this chat room:',
+                true,
+                'Enter new password...'
+            );
+            if (newPassword === null) return;
+            
+            const trimmedPassword = newPassword.trim();
+            if (trimmedPassword.length === 0) {
+                appUtils.showToast('Password cannot be empty', 'error');
                 return;
             }
-
-            if (chatSidebar && chatSidebar.classList.contains('visible')) {
-                chatSidebar.classList.remove('visible');
+            
+            try {
+                window.appUtils.showLoader();
+                await appApi.updateRoomPassword(activeRoomId, trimmedPassword);
+                sessionStorage.setItem('room_auth_' + activeRoomId, 'true');
+                appUtils.showToast('Room password updated successfully!', 'success');
+            } catch (error) {
+                console.error('Update room password error:', error);
+                appUtils.showToast(error.message || 'Failed to update room password', 'error');
+            } finally {
+                window.appUtils.hideLoader();
             }
         });
-    });
+    }
 });

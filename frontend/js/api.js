@@ -1,0 +1,168 @@
+const API_BASE_URL = `${window.appUtils.getBackendUrl()}/api`;
+
+const api = {
+    async authorizedFetch(url, options = {}) {
+        console.log(`in frontend api module in authorizedFetch method - Initiating request to: ${url}`);
+        const token = await window.appAuth.getIdToken();
+        if (!token) {
+            console.warn('in frontend api module in authorizedFetch method - No Firebase auth token found.');
+            throw new Error('User is not authenticated');
+        }
+        
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            ...(options.headers || {})
+        };
+        
+        console.log("Ye log header details: ", JSON.stringify(headers));
+
+        return fetch(url, {
+            ...options,
+            headers
+        });
+
+    },
+
+    // Rooms API
+    async fetchRooms() {
+        console.log('in frontend api module in fetchRooms method - Initiating GET request to fetch all rooms.');
+        try {
+            const response = await this.authorizedFetch(`${API_BASE_URL}/rooms`);
+            console.log(`in frontend api module in fetchRooms method - Response status: ${response.status}`);
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || 'Failed to fetch rooms');
+            }
+            const data = await response.json();
+            console.log('in frontend api module in fetchRooms method - Rooms successfully fetched:', data);
+            return data;
+        } catch (error) {
+            console.error('in frontend api module in fetchRooms method - fetchRooms error:', error);
+            throw error;
+        }
+    },
+
+    async fetchRoomById(id) {
+        console.log(`in frontend api module in fetchRoomById method - Initiating GET request for room ID: ${id}`);
+        try {
+            const response = await this.authorizedFetch(`${API_BASE_URL}/rooms/${id}`);
+            console.log(`in frontend api module in fetchRoomById method - Response status: ${response.status}`);
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || 'Failed to fetch room');
+            }
+            const data = await response.json();
+            console.log(`in frontend api module in fetchRoomById method - Room fetched for ID ${id}:`, data);
+            return data;
+        } catch (error) {
+            console.error(`in frontend api module in fetchRoomById method - fetchRoomById error for ID ${id}:`, error);
+            throw error;
+        }
+    },
+
+    async createRoom(roomName, password) {
+        console.log(`in frontend api module in createRoom method - Initiating POST request to create room: "${roomName}"`);
+        try {
+            const response = await this.authorizedFetch(`${API_BASE_URL}/rooms`, {
+                method: 'POST',
+                body: JSON.stringify({ roomName, password }),
+            });
+            console.log(`in frontend api module in createRoom method - Response status: ${response.status}`);
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || 'Failed to create room');
+            }
+            const data = await response.json();
+            console.log('in frontend api module in createRoom method - Room successfully created:', data);
+            return data;
+        } catch (error) {
+            console.error('in frontend api module in createRoom method - createRoom error:', error);
+            throw error;
+        }
+    },
+
+    async verifyRoomPassword(roomId, password) {
+        console.log(`in frontend api module in verifyRoomPassword method - Verifying password for room: ${roomId}`);
+        try {
+            const response = await this.authorizedFetch(`${API_BASE_URL}/rooms/${roomId}/verify`, {
+                method: 'POST',
+                body: JSON.stringify({ password }),
+            });
+            console.log(`in frontend api module in verifyRoomPassword method - Response status: ${response.status}`);
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || 'Incorrect password');
+            }
+            const data = await response.json();
+            console.log('in frontend api module in verifyRoomPassword method - Password verified successfully:', data);
+            return data;
+        } catch (error) {
+            console.error('in frontend api module in verifyRoomPassword method - verifyRoomPassword error:', error);
+            throw error;
+        }
+    },
+
+    async updateRoomPassword(roomId, password) {
+        console.log(`in frontend api module in updateRoomPassword method - Updating password for room: ${roomId}`);
+        try {
+            const response = await this.authorizedFetch(`${API_BASE_URL}/rooms/${roomId}/password`, {
+                method: 'PUT',
+                body: JSON.stringify({ password }),
+            });
+            console.log(`in frontend api module in updateRoomPassword method - Response status: ${response.status}`);
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || 'Failed to update password');
+            }
+            const data = await response.json();
+            console.log('in frontend api module in updateRoomPassword method - Password updated successfully:', data);
+            return data;
+        } catch (error) {
+            console.error('in frontend api module in updateRoomPassword method - updateRoomPassword error:', error);
+            throw error;
+        }
+    },
+
+    // Messages API
+    async fetchMessages(roomId) {
+        console.log(`in frontend api module in fetchMessages method - Initiating GET request to fetch messages for room ID: ${roomId}`);
+        try {
+            const response = await this.authorizedFetch(`${API_BASE_URL}/messages/${roomId}`);
+            console.log(`in frontend api module in fetchMessages method - Response status: ${response.status}`);
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || 'Failed to fetch messages');
+            }
+            const data = await response.json();
+            console.log(`in frontend api module in fetchMessages method - Messages fetched for room ${roomId}:`, data);
+            return data;
+        } catch (error) {
+            console.error(`in frontend api module in fetchMessages method - fetchMessages error for room ${roomId}:`, error);
+            throw error;
+        }
+    },
+
+    async sendMessage(roomId, message) {
+        console.log(`in frontend api module in sendMessage method - Initiating POST request to send message in room ID: ${roomId}`);
+        try {
+            const response = await this.authorizedFetch(`${API_BASE_URL}/messages`, {
+                method: 'POST',
+                body: JSON.stringify({ roomId, message }),
+            });
+            console.log(`in frontend api module in sendMessage method - Response status: ${response.status}`);
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || 'Failed to send message');
+            }
+            const data = await response.json();
+            console.log('in frontend api module in sendMessage method - Message successfully sent and saved:', data);
+            return data;
+        } catch (error) {
+            console.error('in frontend api module in sendMessage method - sendMessage error:', error);
+            throw error;
+        }
+    }
+};
+
+window.appApi = api;
