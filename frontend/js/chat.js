@@ -72,8 +72,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             const activeRoom = rooms.find(r => r._id === activeRoomId);
 
             // Access verification
+            console.log('Access verification check:', {
+                activeRoomId,
+                activeRoomName,
+                sessionStorageKey: 'room_auth_' + activeRoomId,
+                sessionStorageVal: sessionStorage.getItem('room_auth_' + activeRoomId)
+            });
+            
             let isAuthorized = sessionStorage.getItem('room_auth_' + activeRoomId) === 'true';
             if (!isAuthorized) {
+                console.log('Room not authorized yet. Launching prompt...');
                 let passwordAttempt = await window.appUtils.showCustomPrompt(
                     'Access Password Required',
                     `This room #${activeRoomName} is password-protected. Please enter the password to join.`,
@@ -96,14 +104,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                     setTimeout(() => window.location.reload(), 1000);
                     return;
                 }
+            } else {
+                console.log('Room already authorized in session storage.');
             }
 
             // Show/Hide Change Password button for room creator
             const changePasswordBtn = document.getElementById('btn-change-password');
+            console.log('Creator check details:', {
+                activeRoom,
+                creatorId: activeRoom ? activeRoom.creatorId : 'no room',
+                currentUser,
+                uid: currentUser ? currentUser.uid : 'no user',
+                match: !!(activeRoom && currentUser && activeRoom.creatorId === currentUser.uid)
+            });
             if (changePasswordBtn) {
                 if (activeRoom && activeRoom.creatorId && currentUser && activeRoom.creatorId === currentUser.uid) {
+                    console.log('User is the creator. Showing Change Password button.');
                     changePasswordBtn.style.display = 'inline-flex';
                 } else {
+                    console.log('User is NOT the creator. Hiding Change Password button.');
                     changePasswordBtn.style.display = 'none';
                 }
             }
@@ -156,6 +175,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (room._id !== activeRoomId) {
                     appSocket.leaveRoom(activeRoomId);
                     appSocket.disconnectSocket();
+                    
+                    // Clear authorization cache for all rooms so they must verify password when switching
+                    for (let i = 0; i < sessionStorage.length; i++) {
+                        const key = sessionStorage.key(i);
+                        if (key && key.startsWith('room_auth_')) {
+                            sessionStorage.removeItem(key);
+                            i--; // adjust index since we removed an item
+                        }
+                    }
                     
                     sessionStorage.setItem('openchat_active_room_id', room._id);
                     sessionStorage.setItem('openchat_active_room_name', room.roomName);
