@@ -61,12 +61,12 @@ const api = {
         }
     },
 
-    async createRoom(roomName) {
+    async createRoom(roomName, password) {
         console.log(`in frontend api module in createRoom method - Initiating POST request to create room: "${roomName}"`);
         try {
             const response = await this.authorizedFetch(`${API_BASE_URL}/rooms`, {
                 method: 'POST',
-                body: JSON.stringify({ roomName }),
+                body: JSON.stringify({ roomName, password }),
             });
             console.log(`in frontend api module in createRoom method - Response status: ${response.status}`);
             if (!response.ok) {
@@ -78,6 +78,48 @@ const api = {
             return data;
         } catch (error) {
             console.error('in frontend api module in createRoom method - createRoom error:', error);
+            throw error;
+        }
+    },
+
+    async verifyRoomPassword(roomId, password) {
+        console.log(`in frontend api module in verifyRoomPassword method - Verifying password for room: ${roomId}`);
+        try {
+            const response = await this.authorizedFetch(`${API_BASE_URL}/rooms/${roomId}/verify`, {
+                method: 'POST',
+                body: JSON.stringify({ password }),
+            });
+            console.log(`in frontend api module in verifyRoomPassword method - Response status: ${response.status}`);
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || 'Incorrect password');
+            }
+            const data = await response.json();
+            console.log('in frontend api module in verifyRoomPassword method - Password verified successfully:', data);
+            return data;
+        } catch (error) {
+            console.error('in frontend api module in verifyRoomPassword method - verifyRoomPassword error:', error);
+            throw error;
+        }
+    },
+
+    async updateRoomPassword(roomId, password) {
+        console.log(`in frontend api module in updateRoomPassword method - Updating password for room: ${roomId}`);
+        try {
+            const response = await this.authorizedFetch(`${API_BASE_URL}/rooms/${roomId}/password`, {
+                method: 'PUT',
+                body: JSON.stringify({ password }),
+            });
+            console.log(`in frontend api module in updateRoomPassword method - Response status: ${response.status}`);
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || 'Failed to update password');
+            }
+            const data = await response.json();
+            console.log('in frontend api module in updateRoomPassword method - Password updated successfully:', data);
+            return data;
+        } catch (error) {
+            console.error('in frontend api module in updateRoomPassword method - updateRoomPassword error:', error);
             throw error;
         }
     },

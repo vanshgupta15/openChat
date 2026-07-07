@@ -32,8 +32,9 @@ export const getRoomById = async (req: Request, res: Response, next: NextFunctio
 };
 
 export const createRoom = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const { roomName } = req.body;
-  console.log(`in rooms controller layer in createRoom method - Request received to create room with name: "${roomName}"`);
+  const { roomName, password } = req.body;
+  const creatorId = (req as any).user?.uid;
+  console.log(`in rooms controller layer in createRoom method - Request received to create room with name: "${roomName}" by creator: ${creatorId}`);
   try {
     if (!roomName || typeof roomName !== 'string' || roomName.trim().length < 3 || roomName.trim().length > 30) {
       console.warn(`in rooms controller layer in createRoom method - Validation failed: Room name "${roomName}" must be between 3 and 30 characters.`);
@@ -48,11 +49,58 @@ export const createRoom = async (req: Request, res: Response, next: NextFunction
       return;
     }
 
-    const room = await roomService.createRoom(roomName.trim());
+    const room = await roomService.createRoom(roomName.trim(), creatorId, password);
     console.log(`in rooms controller layer in createRoom method - Successfully created room with ID: ${room._id} and name: "${room.roomName}"`);
     res.status(201).json(room);
   } catch (error) {
     console.error(`in rooms controller layer in createRoom method - Error occurred creating room "${roomName}":`, error);
     next(error);
+  }
+};
+
+export const verifyRoomPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const { id } = req.params;
+  const { password } = req.body;
+  console.log(`in rooms controller layer in verifyRoomPassword method - Verifying password for room: ${id}`);
+  try {
+    if (!password) {
+      res.status(400).json({ message: 'Password is required' });
+      return;
+    }
+    const isCorrect = await roomService.verifyRoomPassword(id, password);
+    if (isCorrect) {
+      res.status(200).json({ success: true, message: 'Password verified successfully' });
+    } else {
+      res.status(401).json({ success: false, message: 'Invalid password' });
+    }
+  } catch (error) {
+    console.error(`in rooms controller layer in verifyRoomPassword method - Error:`, error);
+    next(error);
+  }
+};
+
+export const updateRoomPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const { id } = req.params;
+  const { password } = req.body;
+  const creatorId = (req as any).user?.uid;
+  console.log(`in rooms controller layer in updateRoomPassword method - Updating password for room: ${id} by user: ${creatorId}`);
+  try {
+    if (!password || typeof password !== 'string' || password.trim().length === 0) {
+      res.status(400).json({ message: 'Invalid new password' });
+      return;
+    }
+    if (!creatorId) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+    const updatedRoom = await roomService.updateRoomPassword(id, creatorId, password.trim());
+    res.status(200).json({ success: true, message: 'Password updated successfully', room: updatedRoom });
+  } catch (error: any) {
+    console.error(`in rooms controller layer in updateRoomPassword method - Error:`, error);
+    if (error.message.includes('Unauthorized')) {
+      res.status(403).json({ message: error.message });
+    } else {
+      res.status(404).json({ message: error.message });
+    }
   }
 };

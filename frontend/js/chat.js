@@ -69,6 +69,40 @@ document.addEventListener('DOMContentLoaded', async () => {
                 sessionStorage.setItem('openchat_active_room_name', activeRoomName);
             }
 
+            const activeRoom = rooms.find(r => r._id === activeRoomId);
+
+            // Access verification
+            let isAuthorized = sessionStorage.getItem('room_auth_' + activeRoomId) === 'true';
+            if (!isAuthorized) {
+                let passwordAttempt = prompt(`Enter password for room #${activeRoomName} (default is 2222):`);
+                if (passwordAttempt === null) {
+                    window.appUtils.showToast('Password is required to enter this room.', 'error');
+                    window.appUtils.hideLoader();
+                    return;
+                }
+                try {
+                    await appApi.verifyRoomPassword(activeRoomId, passwordAttempt);
+                    sessionStorage.setItem('room_auth_' + activeRoomId, 'true');
+                    isAuthorized = true;
+                    window.appUtils.showToast('Joined room successfully!', 'success');
+                } catch (err) {
+                    window.appUtils.showToast('Invalid room password. Access denied.', 'error');
+                    window.appUtils.hideLoader();
+                    setTimeout(() => window.location.reload(), 1000);
+                    return;
+                }
+            }
+
+            // Show/Hide Change Password button for room creator
+            const changePasswordBtn = document.getElementById('btn-change-password');
+            if (changePasswordBtn) {
+                if (activeRoom && activeRoom.creatorId && currentUser && activeRoom.creatorId === currentUser.uid) {
+                    changePasswordBtn.style.display = 'inline-flex';
+                } else {
+                    changePasswordBtn.style.display = 'none';
+                }
+            }
+
             document.getElementById('chat-room-title').textContent = `# ${activeRoomName}`;
             
             // Populate sidebar list
@@ -330,9 +364,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        const roomPassword = prompt('Set a password for the new room (leave empty for default "2222"):');
+        const passwordToSet = roomPassword !== null ? roomPassword.trim() : '2222';
+
         try {
             window.appUtils.showLoader();
-            const createdRoom = await appApi.createRoom(trimmed);
+            const createdRoom = await appApi.createRoom(trimmed, passwordToSet);
+            
+            // Auto authorize creator for this room
+            sessionStorage.setItem('room_auth_' + createdRoom._id, 'true');
             
             // Success: Switch to new room!
             appSocket.leaveRoom(activeRoomId);
@@ -364,6 +404,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (sidebarClose && chatSidebar) {
         sidebarClose.addEventListener('click', () => {
             chatSidebar.classList.remove('visible');
+        });
+    }
+
+    // Change Room Password button inside chat header
+    const changePasswordBtn = document.getElementById('btn-change-password');
+    if (changePasswordBtn) {
+        changePasswordBtn.addEventListener('click', async () => {
+            const newPassword = prompt('Enter new password for this room:');
+            if (newPassword === null) return;
+            
+            const trimmedPassword = newPassword.trim();
+            if (trimmedPassword.length === 0) {
+                appUtils.showToast('Password cannot be empty', 'error');
+                return;
+            }
+            
+            try {
+                window.appUtils.showLoader();
+                await appApi.updateRoomPassword(activeRoomId, trimmedPassword);
+                sessionStorage.setItem('room_auth_' + activeRoomId, 'true');
+                appUtils.showToast('Room password updated successfully!', 'success');
+            } catch (error) {
+                console.error('Update room password error:', error);
+                appUtils.showToast(error.message || 'Failed to update room password', 'error');
+            } finally {
+                window.appUtils.hideLoader();
+            }
         });
     }
 });
