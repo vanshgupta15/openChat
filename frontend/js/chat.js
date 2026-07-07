@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const initializeChat = () => {
         console.log('in frontend chat module initializeChat - Connecting socket...');
-        appSocket.connectSocket('http://localhost:5000');
+        appSocket.connectSocket(window.appUtils.getBackendUrl());
 
         // Socket listeners
         appSocket.listenForMessages((msg) => {

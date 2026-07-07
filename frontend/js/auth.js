@@ -6,7 +6,7 @@ const authManager = {
         if (isInitialized) return;
         console.log('in frontend auth module in initializeFirebase method - Fetching configuration from backend...');
         try {
-            const response = await fetch('http://localhost:5000/api/auth/config');
+            const response = await fetch(`${window.appUtils.getBackendUrl()}/api/auth/config`);
             if (!response.ok) {
                 throw new Error('Failed to fetch Firebase configuration');
             }

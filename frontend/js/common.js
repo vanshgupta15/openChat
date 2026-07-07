@@ -108,6 +108,11 @@ const getInitials = (name) => {
     return name.substring(0, 2).toUpperCase();
 };
 
+// Dynamic backend URL resolver
+const getBackendUrl = () => {
+    return 'https://openchat-bvzt.onrender.com';
+};
+
 // Export to window for global access
 window.appUtils = {
     isValidString,
@@ -117,5 +122,6 @@ window.appUtils = {
     showLoader,
     hideLoader,
     storage,
-    getInitials
+    getInitials,
+    getBackendUrl
 };
