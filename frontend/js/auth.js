@@ -12,7 +12,7 @@ const authManager = {
             }
             const config = await response.json();
             console.log('in frontend auth module in initializeFirebase method - Initializing Firebase SDK...');
-            
+
             firebase.initializeApp(config);
             authInstance = firebase.auth();
             isInitialized = true;

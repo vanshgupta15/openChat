@@ -15,10 +15,13 @@ const api = {
             ...(options.headers || {})
         };
         
+        console.log("Ye log header details: ", JSON.stringify(headers));
+
         return fetch(url, {
             ...options,
             headers
         });
+
     },
 
     // Rooms API
