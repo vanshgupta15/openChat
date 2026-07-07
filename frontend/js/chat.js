@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             await loadMessageHistory();
             
             // Initialize Socket IO
-            initializeChat();
+            await initializeChat();
         } catch (error) {
             console.error('Error during chat flow bootstrap:', error);
             window.appUtils.showToast('Failed to load chat components', 'error');
@@ -212,9 +212,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    const initializeChat = () => {
+    const initializeChat = async () => {
         console.log('in frontend chat module initializeChat - Connecting socket...');
-        appSocket.connectSocket(window.appUtils.getBackendUrl());
+        await appSocket.connectSocket(window.appUtils.getBackendUrl());
 
         // Socket listeners
         appSocket.listenForMessages((msg) => {
