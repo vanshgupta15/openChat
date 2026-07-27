@@ -55,7 +55,46 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Load rooms
             const rooms = await appApi.fetchRooms();
             if (rooms.length === 0) {
-                window.appUtils.showToast('No rooms available on server.', 'error');
+                window.appUtils.showToast('No rooms available on server. Please create one.', 'info');
+                sessionStorage.removeItem('openchat_active_room_id');
+                sessionStorage.removeItem('openchat_active_room_name');
+                
+                const roomList = document.getElementById('sidebar-room-list');
+                if (roomList) {
+                    roomList.innerHTML = `
+                        <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted, #8a8d90); font-size: 0.9rem; line-height: 1.4;">
+                            No rooms available.<br>Create a room below to start chatting!
+                        </div>
+                    `;
+                }
+                
+                const messagesContainer = document.getElementById('chat-messages');
+                if (messagesContainer) {
+                    messagesContainer.innerHTML = `
+                        <div class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary); text-align: center; padding: 2rem;">
+                            <div class="empty-icon" style="font-size: 3rem; margin-bottom: 1rem;">💬</div>
+                            <h3>Welcome to OpenChat</h3>
+                            <p style="margin-top: 0.5rem; color: var(--text-muted, #8a8d90); max-width: 320px;">
+                                No rooms exist yet. Click the "Create New Room" button in the sidebar to create the first room.
+                            </p>
+                        </div>
+                    `;
+                }
+                
+                document.getElementById('chat-room-title').textContent = '# No Active Room';
+                const roomCountEl = document.getElementById('chat-room-count');
+                if (roomCountEl) roomCountEl.textContent = '0 members online';
+                
+                const messageInput = document.getElementById('message-input');
+                if (messageInput) {
+                    messageInput.disabled = true;
+                    messageInput.placeholder = 'Create a room to start chatting...';
+                }
+                const sendBtn = document.querySelector('.btn-send');
+                if (sendBtn) {
+                    sendBtn.disabled = true;
+                }
+                
                 window.appUtils.hideLoader();
                 return;
             }
