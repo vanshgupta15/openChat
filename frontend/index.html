@@ -6,8 +6,8 @@
     <title>OpenChat - Login</title>
     <!-- Google Fonts: Inter & Montserrat -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/common.css?v=1.4">
-    <link rel="stylesheet" href="css/login.css?v=1.4">
+    <link rel="stylesheet" href="css/common.css?v=1.6">
+    <link rel="stylesheet" href="css/login.css?v=1.6">
 </head>
 <body>
     <div class="glow glow-1"></div>
@@ -64,8 +64,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     
-    <script src="js/common.js?v=1.4"></script>
-    <script src="js/auth.js?v=1.4"></script>
+    <script src="js/common.js?v=1.6"></script>
+    <script src="js/auth.js?v=1.6"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('in login view DOMContentLoaded event - Bootstrapping login state...');
@@ -80,6 +80,8 @@
             window.appAuth.observeAuthState((user) => {
                 if (user) {
                     console.log('in login view observeAuthState - User is authenticated. Redirecting to rooms.html...');
+                    sessionStorage.removeItem('openchat_active_room_id');
+                    sessionStorage.removeItem('openchat_active_room_name');
                     window.location.href = 'rooms.html';
                 }
             });
@@ -91,7 +93,13 @@
                     console.log('in login view btnGoogleClick - Triggering Google Sign-In popup flow...');
                     window.appUtils.showLoader();
                     try {
-                        await window.appAuth.loginWithGoogle();
+                        const user = await window.appAuth.loginWithGoogle();
+                        if (user) {
+                            console.log('in login view btnGoogleClick - Sign-In successful. Redirecting to rooms.html...');
+                            sessionStorage.removeItem('openchat_active_room_id');
+                            sessionStorage.removeItem('openchat_active_room_name');
+                            window.location.href = 'rooms.html';
+                        }
                     } catch (error) {
                         console.error('in login view btnGoogleClick - Sign-In failed:', error);
                         window.appUtils.showToast('Google Sign-In failed. Please try again.', 'error');
