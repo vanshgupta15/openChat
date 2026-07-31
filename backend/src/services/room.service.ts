@@ -12,10 +12,11 @@ export const getRoomById = async (id: string): Promise<IRoomDocument | null> => 
 
 export const createRoom = async (roomName: string, creatorId?: string, password?: string): Promise<IRoomDocument> => {
   console.log(`in rooms service layer in createRoom method - Saving new RoomModel: "${roomName}" with creator: ${creatorId}`);
+  const trimmedPassword = password ? password.trim() : '';
   const newRoom = new RoomModel({ 
     roomName,
     creatorId,
-    password: password || '2222'
+    password: trimmedPassword
   });
   return await newRoom.save();
 };
@@ -32,7 +33,8 @@ export const verifyRoomPassword = async (roomId: string, passwordAttempt: string
   console.log(`in rooms service layer in verifyRoomPassword method - Verifying password for room: ${roomId}`);
   const room = await RoomModel.findById(roomId);
   if (!room) return false;
-  const actualPassword = room.password || '2222';
+  const actualPassword = room.password || '';
+  if (actualPassword === '') return true; // Public room
   return actualPassword === passwordAttempt;
 };
 

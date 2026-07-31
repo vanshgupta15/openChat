@@ -16,7 +16,7 @@ const roomSchema = new Schema<IRoomDocument>({
   },
   password: {
     type: String,
-    default: '2222',
+    default: '',
   },
   creatorId: {
     type: String,

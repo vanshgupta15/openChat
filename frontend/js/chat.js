@@ -117,9 +117,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 sessionStorageVal: sessionStorage.getItem('room_auth_' + activeRoomId)
             });
             
+            const activeRoomIsProtected = activeRoom ? (activeRoom.hasPassword !== undefined ? activeRoom.hasPassword : !!(activeRoom.password && activeRoom.password.trim() !== '')) : false;
+
             let isAuthorized = sessionStorage.getItem('room_auth_' + activeRoomId) === 'true';
-            if (!isAuthorized) {
-                console.log('Room not authorized yet. Launching prompt...');
+            if (activeRoomIsProtected && !isAuthorized) {
+                console.log('Room is protected and not authorized yet. Launching prompt...');
                 let passwordAttempt = await window.appUtils.showCustomPrompt(
                     'Access Password Required',
                     `This room #${activeRoomName} is password-protected. Please enter the password to join.`,
@@ -129,6 +131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (passwordAttempt === null) {
                     window.appUtils.showToast('Password is required to enter this room.', 'error');
                     window.appUtils.hideLoader();
+                    window.location.href = 'rooms.html';
                     return;
                 }
                 try {
@@ -139,11 +142,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } catch (err) {
                     window.appUtils.showToast('Invalid room password. Access denied.', 'error');
                     window.appUtils.hideLoader();
-                    setTimeout(() => window.location.reload(), 1000);
+                    setTimeout(() => { window.location.href = 'rooms.html'; }, 1000);
                     return;
                 }
             } else {
-                console.log('Room already authorized in session storage.');
+                console.log('Room is public or already authorized in session storage.');
+                sessionStorage.setItem('room_auth_' + activeRoomId, 'true');
             }
 
             // Show/Hide Change Password button for room creator

@@ -5,8 +5,15 @@ export const getRooms = async (req: Request, res: Response, next: NextFunction):
   console.log('in rooms controller layer in getRooms method - Request received to fetch all rooms.');
   try {
     const rooms = await roomService.getAllRooms();
-    console.log(`in rooms controller layer in getRooms method - Successfully retrieved ${rooms.length} rooms.`);
-    res.status(200).json(rooms);
+    const sanitized = rooms.map(room => ({
+      _id: room._id,
+      roomName: room.roomName,
+      creatorId: room.creatorId,
+      hasPassword: !!(room.password && room.password.trim() !== ''),
+      createdAt: room.createdAt
+    }));
+    console.log(`in rooms controller layer in getRooms method - Successfully retrieved ${sanitized.length} rooms.`);
+    res.status(200).json(sanitized);
   } catch (error) {
     console.error('in rooms controller layer in getRooms method - Error occurred:', error);
     next(error);
@@ -23,8 +30,15 @@ export const getRoomById = async (req: Request, res: Response, next: NextFunctio
       res.status(404).json({ message: 'Room not found' });
       return;
     }
+    const sanitized = {
+      _id: room._id,
+      roomName: room.roomName,
+      creatorId: room.creatorId,
+      hasPassword: !!(room.password && room.password.trim() !== ''),
+      createdAt: room.createdAt
+    };
     console.log(`in rooms controller layer in getRoomById method - Successfully retrieved room: ${room.roomName}`);
-    res.status(200).json(room);
+    res.status(200).json(sanitized);
   } catch (error) {
     console.error(`in rooms controller layer in getRoomById method - Error occurred for room ID ${id}:`, error);
     next(error);
@@ -50,8 +64,15 @@ export const createRoom = async (req: Request, res: Response, next: NextFunction
     }
 
     const room = await roomService.createRoom(roomName.trim(), creatorId, password);
+    const sanitized = {
+      _id: room._id,
+      roomName: room.roomName,
+      creatorId: room.creatorId,
+      hasPassword: !!(room.password && room.password.trim() !== ''),
+      createdAt: room.createdAt
+    };
     console.log(`in rooms controller layer in createRoom method - Successfully created room with ID: ${room._id} and name: "${room.roomName}"`);
-    res.status(201).json(room);
+    res.status(201).json(sanitized);
   } catch (error) {
     console.error(`in rooms controller layer in createRoom method - Error occurred creating room "${roomName}":`, error);
     next(error);

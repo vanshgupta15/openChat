@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const card = document.createElement('div');
             card.className = 'room-card';
 
-            const isProtected = !!room.hasPassword;
+            const isProtected = room.hasPassword !== undefined ? room.hasPassword : !!(room.password && room.password.trim() !== '');
             const badgeHtml = isProtected
                 ? `<span class="badge badge-protected"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> Protected</span>`
                 : `<span class="badge badge-public"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path></svg> Public</span>`;
