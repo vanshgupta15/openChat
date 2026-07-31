@@ -99,13 +99,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            // Default to first room if activeRoomId is invalid/missing
+            // Redirect to rooms selection page if activeRoomId is invalid or missing
             const activeRoomExists = rooms.some(r => r._id === activeRoomId);
             if (!activeRoomId || !activeRoomExists) {
-                activeRoomId = rooms[0]._id;
-                activeRoomName = rooms[0].roomName;
-                sessionStorage.setItem('openchat_active_room_id', activeRoomId);
-                sessionStorage.setItem('openchat_active_room_name', activeRoomName);
+                console.log('No valid active room selected. Redirecting to rooms.html for selection.');
+                window.location.href = 'rooms.html';
+                return;
             }
 
             const activeRoom = rooms.find(r => r._id === activeRoomId);
@@ -411,19 +410,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Sign out/Leave room button
-    document.getElementById('btn-leave-room').addEventListener('click', async () => {
-        console.log('in frontend chat module logout click - Logging out.');
-        appSocket.leaveRoom(activeRoomId);
-        appSocket.disconnectSocket();
-        
-        try {
-            await window.appAuth.logout();
-        } catch (error) {
-            console.error('Logout error:', error);
+    // Navigation helpers for Room Selection page
+    const navigateToRoomSelection = () => {
+        console.log('in frontend chat module - Navigating back to room selection page.');
+        if (activeRoomId) {
+            appSocket.leaveRoom(activeRoomId);
+            appSocket.disconnectSocket();
         }
-        window.location.href = 'index.html';
-    });
+        sessionStorage.removeItem('openchat_active_room_id');
+        sessionStorage.removeItem('openchat_active_room_name');
+        window.location.href = 'rooms.html';
+    };
+
+    const selectRoomBtn = document.getElementById('btn-select-room');
+    if (selectRoomBtn) {
+        selectRoomBtn.addEventListener('click', navigateToRoomSelection);
+    }
+
+    const allRoomsBtn = document.getElementById('btn-all-rooms');
+    if (allRoomsBtn) {
+        allRoomsBtn.addEventListener('click', navigateToRoomSelection);
+    }
+
+    // Leave room button
+    const leaveRoomBtn = document.getElementById('btn-leave-room');
+    if (leaveRoomBtn) {
+        leaveRoomBtn.addEventListener('click', navigateToRoomSelection);
+    }
 
     // Create New Room button inside sidebar
     document.getElementById('btn-create-room').addEventListener('click', async () => {

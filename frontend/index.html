@@ -76,11 +76,11 @@
                 window.appUtils.showToast('Failed to initialize connection to server', 'error');
             }
 
-            // Observe auth state, if already authenticated, redirect to chat.html
+            // Observe auth state, if already authenticated, redirect to rooms.html
             window.appAuth.observeAuthState((user) => {
                 if (user) {
-                    console.log('in login view observeAuthState - User is authenticated. Redirecting to chat.html...');
-                    window.location.href = 'chat.html';
+                    console.log('in login view observeAuthState - User is authenticated. Redirecting to rooms.html...');
+                    window.location.href = 'rooms.html';
                 }
             });
 

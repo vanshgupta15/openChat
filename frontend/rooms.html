@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenChat - Select Room</title>
+    <!-- Google Fonts: Inter & Montserrat -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/common.css?v=1.5">
+    <link rel="stylesheet" href="css/rooms.css?v=1.5">
+</head>
+
+<body>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+
+    <!-- Navigation Header -->
+    <header class="rooms-navbar">
+        <div class="logo">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 4px;">
+                <ellipse cx="12" cy="13" rx="2.5" ry="4.5" fill="var(--spidey-red)" stroke="var(--spidey-red)" />
+                <circle cx="12" cy="7" r="1.8" fill="var(--spidey-red)" stroke="var(--spidey-red)" />
+                <path d="M9.5 10C7.5 9 6 7 6 5M14.5 10C16.5 9 18 7 18 5M9 13C6.5 13 5.5 12.5 4.5 11M15 13C17.5 13 18.5 12.5 19.5 11M9.5 16C7.5 17 6 19 6 21M14.5 16C16.5 17 18 19 18 21" stroke="var(--spidey-red)" stroke-linecap="round" />
+            </svg>
+            <span>OpenChat</span>
+        </div>
+
+        <div class="nav-user">
+            <div class="user-profile-badge">
+                <div class="avatar" id="nav-user-avatar">?</div>
+                <span class="user-name" id="nav-user-name">Loading...</span>
+            </div>
+            <button class="btn-logout" id="btn-logout" title="Sign out">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Sign out
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="rooms-main">
+        <section class="rooms-hero">
+            <h1>Select a Room to Enter</h1>
+            <p>Welcome! Browse available chat channels or create your own room to connect with others.</p>
+
+            <div class="rooms-action-bar">
+                <div class="search-wrapper">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="room-search-input" class="input-field" placeholder="Search rooms by name...">
+                </div>
+                <button class="btn-create-hero" id="btn-create-room-hero">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Create New Room
+                </button>
+            </div>
+        </section>
+
+        <!-- Room Cards Grid -->
+        <section class="rooms-grid" id="rooms-grid">
+            <div class="rooms-empty">
+                <div class="rooms-empty-icon">⏳</div>
+                <p>Loading rooms...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Firebase Compat SDKs from CDN -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+
+    <script src="js/common.js?v=1.5"></script>
+    <script src="js/auth.js?v=1.5"></script>
+    <script src="js/api.js?v=1.5"></script>
+    <script src="js/rooms.js?v=1.5"></script>
+</body>
+
+</html>
